@@ -1,0 +1,501 @@
+/* Basic reset and font styling */
+body {
+  margin: 0;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  background: #f8f8fa;
+  color: #333;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh; /* Ensure full viewport height */
+}
+
+/* Header and navigation styles */
+header, footer {
+  background: #d4af37;
+  color: #fff;
+  text-align: center;
+  padding: 16px 0;
+  flex-shrink: 0; /* Prevent shrinking */
+}
+
+nav a {
+  color: #fff;
+  text-decoration: none;
+  margin: 0 18px;
+  font-weight: bold;
+}
+
+/* Central content styling */
+.main-content {
+  flex: 1 0 auto; /* grow and shrink as needed */
+  max-width: 900px;
+  margin: 32px auto 0; /* keep top margin, no bottom margin */
+  padding: 25px;
+  background: #fff;
+  border-radius: 9px;
+  box-shadow: 0 2px 14px rgba(212,175,55,0.10);
+  width: 90%;
+}
+
+/* Profile form styling */
+.profile-form {
+  display: flex;
+  flex-direction: column;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.profile-form label {
+  margin-top: 15px;
+  font-weight: bold;
+}
+
+.profile-form input,
+.profile-form textarea {
+  padding: 8px 10px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 5px;
+}
+
+.profile-form button {
+  margin-top: 20px;
+  padding: 10px;
+  background-color: #d4af37;
+  color: white;
+  font-weight: bold;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.profile-form button:hover {
+  background-color: #92731b;
+}
+
+/* Client Management form styling */
+.client-form {
+  display: flex;
+  flex-direction: column;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.client-form label {
+  margin-top: 15px;
+  font-weight: bold;
+}
+
+.client-form input,
+.client-form select {
+  padding: 8px 10px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 5px;
+}
+
+.client-form button {
+  margin-top: 20px;
+  padding: 10px;
+  background-color: #d4af37;
+  color: white;
+  font-weight: bold;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.client-form button:hover {
+  background-color: #92731b;
+}
+
+input, button, select {
+  font-size: 16px;
+  margin-bottom: 12px;
+  padding: 7px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+}
+
+button {
+  background: #d4af37;
+  color: #fff;
+  border: none;
+  margin-left: 6px;
+  cursor: pointer;
+  transition: background 0.25s;
+}
+
+button:hover {
+  background: #92731b;
+}
+
+/* Checklist completed task */
+.completed {
+  text-decoration: line-through;
+  color: #adadad;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 650px) {
+  .main-content { padding: 10px; }
+  header, footer { font-size: 14px; }
+}
+
+/* Checklist form styling */
+.checklist-form {
+  max-width: 700px;
+  margin: 0 auto 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.checklist-form .form-row {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.checklist-form .form-group {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 300px;
+  min-width: 250px;
+}
+
+.checklist-form label {
+  font-weight: bold;
+  margin-bottom: 6px;
+}
+
+.checklist-form input[type="text"],
+.checklist-form select {
+  padding: 8px 10px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+.checklist-form button {
+  background-color: #d4af37;
+  color: white;
+  font-weight: bold;
+  border: none;
+  border-radius: 5px;
+  padding: 10px 20px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.3s ease;
+  align-self: flex-start;
+}
+
+.checklist-form button:hover {
+  background-color: #92731b;
+  transform: scale(1.05);
+}
+
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 32px;
+}
+.login-btn {
+  background: #d4af37;
+  color: #fff;
+  padding: 9px 23px;
+  font-weight: bold;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+.login-btn:hover {
+  background: #92731b;
+}
+.modal-bg {
+  display: none;
+  position: fixed;
+  z-index: 99;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: #0006;
+}
+.modal {
+  position: fixed;
+  top: 60px; right: 40px;
+  background: #fff;
+  border-radius: 9px;
+  width: 340px;
+  box-shadow: 0 3px 30px #3334;
+  z-index: 100;
+  padding: 32px 28px;
+  display: none;
+}
+.modal.show, .modal-bg.show { display: block; }
+.social-btn {
+  width: 100%; padding: 9px 0; margin: 9px 0;
+  border: none; border-radius: 5px;
+  color: #fff; font-weight: 600; font-size: 15px;
+}
+.google-btn { background: #1976d2; color: white; border: none; font-weight: 600; font-size: 16px; border-radius: 5px; padding: 10px 0; width: 100%; margin: 9px 0; }
+.google-btn:hover, .facebook-btn:hover { background: #b38f1f; color: white; }
+.facebook-btn { background: #4285f4; color: white; border: none; font-weight: 600; font-size: 16px; border-radius: 5px; padding: 10px 0; width: 100%; margin: 9px 0; }
+.modal input { width: 100%; margin-bottom: 13px; }
+.close-x {
+  position: absolute; top: 8px; right: 12px;
+  font-size: 21px; cursor: pointer;
+}
+
+/* Dashboard enhancements for more attraction */
+.dashboard-cards-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  justify-content: center;
+  margin-top: 40px;
+}
+
+.dashboard-card {
+  background: linear-gradient(135deg, #f9f4e7, #d4af37);
+  border-radius: 15px;
+  box-shadow: 0 8px 20px rgba(212, 175, 55, 0.3);
+  padding: 24px;
+  width: 280px;
+  text-align: center;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  cursor: pointer;
+  font-family: 'Georgia', serif;
+  color: #4a3c1a;
+}
+
+.dashboard-card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 12px 30px rgba(212, 175, 55, 0.6);
+}
+
+.dashboard-card h3 {
+  margin-bottom: 12px;
+  font-size: 1.5em;
+  font-weight: bold;
+}
+
+.dashboard-card p {
+  font-size: 1em;
+  line-height: 1.4;
+}
+
+.dashboard-icon {
+  font-size: 3em;
+  margin-bottom: 16px;
+  color: #92731b;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .dashboard-cards-container {
+    flex-direction: column;
+    align-items: center;
+  }
+  .dashboard-card {
+    width: 90%;
+  }
+}
+
+/* Interactive UI elements: animations, transitions, hover effects */
+button, .login-btn, .social-btn {
+  transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+button:hover, .login-btn:hover, .social-btn:hover {
+  transform: scale(1.05);
+  background-color: #b38f1f;
+  box-shadow: 0 4px 12px rgba(180, 143, 31, 0.6);
+  cursor: pointer;
+}
+
+nav a {
+  transition: color 0.3s ease, text-shadow 0.3s ease;
+}
+
+nav a:hover {
+  color: #92731b;
+  text-shadow: 1px 1px 3px rgba(146, 115, 27, 0.8);
+}
+
+/* Smooth fade-in for main content */
+.main-content {
+  opacity: 0;
+  animation: fadeIn 1s forwards;
+}
+
+@keyframes fadeIn {
+  to {
+    opacity: 1;
+  }
+}
+
+/* Responsive improvements */
+@media (max-width: 480px) {
+  nav a {
+    margin: 0 10px;
+    font-size: 14px;
+  }
+  .login-btn {
+    padding: 7px 15px;
+    font-size: 14px;
+  }
+  .main-content {
+    padding: 15px;
+    width: 95%;
+  }
+}
+
+/* Theme Suggestions form styling */
+.theme-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 700px;
+  margin: 0 auto 30px;
+}
+
+/* Budget form styling */
+.budget-form {
+  max-width: 700px;
+  margin: 0 auto 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.budget-form .form-row {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.budget-form .form-group {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 300px;
+  min-width: 250px;
+}
+
+.budget-form label {
+  font-weight: bold;
+  margin-bottom: 6px;
+}
+
+.budget-form input[type="text"],
+.budget-form input[type="number"],
+.budget-form select {
+  padding: 8px 10px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+.budget-form button {
+  background-color: #d4af37;
+  color: white;
+  font-weight: bold;
+  border: none;
+  border-radius: 5px;
+  padding: 10px 20px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.3s ease;
+  align-self: flex-start;
+}
+
+.budget-form button:hover {
+  background-color: #92731b;
+  transform: scale(1.05);
+}
+
+/* Budget table styling */
+#budgetList table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+#budgetList th, #budgetList td {
+  border: 1px solid #ccc;
+  padding: 8px 12px;
+  text-align: left;
+}
+
+#budgetList th {
+  background-color: #f0e6b6;
+  font-weight: bold;
+}
+
+#budgetList button {
+  background-color: #d4af37;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 5px 10px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+#budgetList button:hover {
+  background-color: #92731b;
+}
+
+.theme-form .form-row {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.theme-form .form-group {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 200px;
+  min-width: 180px;
+}
+
+.theme-form label {
+  font-weight: bold;
+  margin-bottom: 6px;
+}
+
+.theme-form input[type="color"],
+.theme-form select {
+  padding: 8px 10px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+.theme-form .form-buttons {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-start;
+}
+
+.theme-form button {
+  background-color: #d4af37;
+  color: white;
+  font-weight: bold;
+  border: none;
+  border-radius: 5px;
+  padding: 10px 20px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+.theme-form button:hover {
+  background-color: #92731b;
+  transform: scale(1.05);
+}
+}

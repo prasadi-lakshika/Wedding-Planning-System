@@ -1,0 +1,62 @@
+{
+  "kandyan": {
+    "colors": {
+      "groom": "#e5c100",
+      "bridesmaids": "#fae5cd",
+      "flowers": "#f594a4",
+      "hall": "#f7db64"
+    },
+    "menu": "Traditional Kandyan rice and curry, sweets, and tropical fruits.",
+    "venue": "Royal Botanical Gardens, Kandy; historic temples."
+  },
+  "hindu": {
+    "colors": {
+      "groom": "#b22234",
+      "bridesmaids": "#ffdf00",
+      "flowers": "#ad1f63",
+      "hall": "#e8bb6d"
+    },
+    "menu": "South Indian vegetarian dishes, dosa, sambar, and sweets.",
+    "venue": "Temple halls, community centers with traditional decor."
+  },
+  "muslim": {
+    "colors": {
+      "groom": "#0f5132",
+      "bridesmaids": "#bcd8c1",
+      "flowers": "#e7e7de",
+      "hall": "#faf6e7"
+    },
+    "menu": "Halal dishes including biryani, kebabs, and desserts.",
+    "venue": "Mosque halls, banquet halls with Islamic motifs."
+  },
+  "christian": {
+    "colors": {
+      "groom": "#585857",
+      "bridesmaids": "#fff7f2",
+      "flowers": "#d1baad",
+      "hall": "#c6a87d"
+    },
+    "menu": "Western-style buffet, roast meats, salads, and cakes.",
+    "venue": "Church halls, garden venues with floral decorations."
+  },
+  "western": {
+    "colors": {
+      "groom": "#334e68",
+      "bridesmaids": "#f7cac9",
+      "flowers": "#b8a9c9",
+      "hall": "#ffe5b4"
+    },
+    "menu": "Continental cuisine, wine, and multi-course meals.",
+    "venue": "Hotels, banquet halls, and outdoor gardens."
+  },
+  "default": {
+    "colors": {
+      "groom": null,
+      "bridesmaids": "#eeeeee",
+      "flowers": "#dddddd",
+      "hall": "#ccc"
+    },
+    "menu": "Custom menu based on preferences.",
+    "venue": "Custom venue suggestions."
+  }
+}
