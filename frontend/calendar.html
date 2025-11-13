@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Event Calendar - Wedding Planning System</title>
+  <link rel="stylesheet" href="assets/css/styles.css" />
+</head>
+<body>
+  <header>
+    <div class="navbar">
+      <nav id="mainNav">
+        <!-- Home link for logged-in users -->
+        <a href="index.html" class="nav-link common-link" style="display:none;">Home</a>
+        
+        <!-- Common links for all logged-in users -->
+        <a href="dashboard.html" class="nav-link common-link" style="display:none;">Dashboard</a>
+        <a href="theme_suggestions.html" class="nav-link common-link" style="display:none;">Theme Suggestions</a>
+        <a href="checklist.html" class="nav-link common-link" style="display:none;">Checklist</a>
+        <a href="budget.html" class="nav-link common-link" style="display:none;">Budget</a>
+        <a href="calendar.html" class="nav-link common-link active" style="display:none;">Calendar</a>
+        <a href="client_management.html" class="nav-link common-link" style="display:none;">Client Management</a>
+        
+        <!-- Planner-only links -->
+        <a href="my_account.html" class="nav-link planner-only-link" style="display:none;">My Account</a>
+        
+        <!-- Users section links -->
+        <a href="profile.html" class="nav-link admin-only-link" style="display:none;">Profile</a>
+        <a href="admin_dashboard.html" class="nav-link admin-only-link" style="display:none;">Users</a>
+        
+        <!-- Logout link (shown when logged in) -->
+        <a href="#" id="logoutLink" class="nav-link logout-link" style="display:none;">Logout</a>
+      </nav>
+      <button class="login-btn" id="openLogin">Sign In / Log In</button>
+    </div>
+  </header>
+  
+  <main class="main-content">
+    <h2>Event Calendar</h2>
+    <form id="eventForm">
+      <input type="date" id="eventDate" required />
+      <input type="text" id="eventTitle" placeholder="Event Title" required />
+      <select id="eventType" style="margin-left: 10px;">
+        <option value="normal">Normal</option>
+        <option value="milestone">Milestone</option>
+        <option value="reminder">Reminder</option>
+      </select>
+      <button type="submit">Add Event</button>
+    </form>
+    <div id="calendarContainer"></div>
+  </main>
+  
+  <footer>&copy; 2025 Wedding Planning System</footer>
+  
+  <!-- Modal Background -->
+  <div class="modal-bg" id="modalBG"></div>
+  <!-- Login Modal -->
+  <div class="modal" id="loginModal">
+    <span class="close-x" onclick="closeModal()">&times;</span>
+    <h3 style="margin-top:2px;">Login to your account</h3>
+    <form id="emailLoginForm">
+      <input id="loginEmail" type="email" placeholder="Email" required>
+      <input id="loginPassword" type="password" placeholder="Password" required>
+      <button type="submit" class="login-btn" style="width:100%; margin-bottom:15px;">Login</button>
+      <div id="loginMsg" style="color:red; font-size:0.98em; margin-bottom:9px;"></div>
+    </form>
+  </div>
+  
+  <!-- Load JavaScript files -->
+  <script src="assets/js/login_modal.js"></script>
+  <script src="assets/js/shared_navigation.js"></script>
+  <script src="assets/js/calendar.js"></script>
+  <script>
+    // Initialize navigation using shared navigation system
+    sharedNavigation.initializePageNavigation();
+  </script>
+</body>
+</html>

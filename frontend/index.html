@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Wedding Planning System</title>
+  <link rel="stylesheet" href="assets/css/styles.css">
+</head>
+<body>
+  <header>
+    <div class="navbar">
+      <nav id="mainNav">
+        <!-- Home link for logged-in users -->
+        <a href="index.html" class="nav-link common-link" style="display:none;">Home</a>
+        
+        <!-- Common links for all logged-in users -->
+        <a href="dashboard.html" class="nav-link common-link" style="display:none;">Dashboard</a>
+        <a href="theme_suggestions.html" class="nav-link common-link" style="display:none;">Theme Suggestions</a>
+        <a href="checklist.html" class="nav-link common-link" style="display:none;">Checklist</a>
+        <a href="budget.html" class="nav-link common-link" style="display:none;">Budget</a>
+        <a href="calendar.html" class="nav-link common-link" style="display:none;">Calendar</a>
+        <a href="client_management.html" class="nav-link common-link" style="display:none;">Client Management</a>
+        
+        <!-- Planner-only links -->
+        <a href="my_account.html" class="nav-link planner-only-link" style="display:none;">My Account</a>
+        
+        <!-- Users section links -->
+        <a href="profile.html" class="nav-link admin-only-link" style="display:none;">Profile</a>
+        <a href="admin_dashboard.html" class="nav-link admin-only-link" style="display:none;">Users</a>
+        
+        <!-- Logout link (shown when logged in) -->
+        <a href="#" id="logoutLink" class="nav-link logout-link" style="display:none;">Logout</a>
+      </nav>
+      <button class="login-btn" id="openLogin">Sign In / Log In</button>
+    </div>
+  </header>
+  
+  <!-- Content for NON-LOGGED IN users -->
+  <main class="main-content" id="publicContent">
+    <div style="text-align: center; padding: 40px 20px;">
+      <h1>Welcome to Wedding Planning System</h1>
+      <p style="font-size: 1.2em; margin: 20px 0; color: #666;">
+        Plan your perfect wedding with our comprehensive planning tools
+      </p>
+      <p style="margin: 30px 0;">
+        Please log in to access your dashboard and start planning your dream wedding.
+      </p>
+      <button class="login-btn" id="getStartedBtn" style="padding: 12px 24px; font-size: 1.1em;">
+        Get Started
+      </button>
+    </div>
+    
+    <div style="max-width: 800px; margin: 40px auto; padding: 0 20px;">
+      <h2 style="text-align: center; margin-bottom: 30px;">Features</h2>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+        <div style="text-align: center; padding: 20px;">
+          <h3>💰 Budget Management</h3>
+          <p>Track your wedding expenses and stay within budget</p>
+        </div>
+        <div style="text-align: center; padding: 20px;">
+          <h3>📋 Wedding Checklist</h3>
+          <p>Never miss important wedding planning tasks</p>
+        </div>
+        <div style="text-align: center; padding: 20px;">
+          <h3>🎨 Theme Suggestions</h3>
+          <p>Discover beautiful themes for your special day</p>
+        </div>
+        <div style="text-align: center; padding: 20px;">
+          <h3>📅 Event Calendar</h3>
+          <p>Schedule and manage all wedding events</p>
+        </div>
+      </div>
+    </div>
+  </main>
+  
+  <!-- Content for LOGGED IN users -->
+  <main class="main-content" id="loggedInContent" style="display:none;">
+    <div style="text-align: center; padding: 40px 20px;">
+      <h1>Welcome Back, <span id="userNameDisplay"></span>!</h1>
+      <p style="font-size: 1.2em; margin: 20px 0; color: #666;">
+        Ready to continue planning amazing weddings?
+      </p>
+    </div>
+    
+    <div style="max-width: 1000px; margin: 40px auto; padding: 0 20px;">
+      <h2 style="text-align: center; margin-bottom: 30px;">Quick Access</h2>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px;">
+        
+        <div class="dashboard-card" onclick="window.location.href='dashboard.html'" style="cursor: pointer;">
+          <div class="dashboard-icon">📊</div>
+          <h3>Dashboard</h3>
+          <p>View your statistics, projects, and overview</p>
+        </div>
+        
+        <div class="dashboard-card" onclick="window.location.href='client_management.html'" style="cursor: pointer;">
+          <div class="dashboard-icon">👥</div>
+          <h3>Client Management</h3>
+          <p>Manage wedding projects and client information</p>
+        </div>
+        
+        <div class="dashboard-card" onclick="window.location.href='theme_suggestions.html'" style="cursor: pointer;">
+          <div class="dashboard-icon">🎨</div>
+          <h3>Theme Suggestions</h3>
+          <p>Get personalized theme recommendations</p>
+        </div>
+        
+        <div class="dashboard-card" onclick="window.location.href='checklist.html'" style="cursor: pointer;">
+          <div class="dashboard-icon">📋</div>
+          <h3>Wedding Checklist</h3>
+          <p>Track tasks and planning progress</p>
+        </div>
+        
+        <div class="dashboard-card" onclick="window.location.href='budget.html'" style="cursor: pointer;">
+          <div class="dashboard-icon">💰</div>
+          <h3>Budget Manager</h3>
+          <p>Monitor expenses and financial planning</p>
+        </div>
+        
+        <div class="dashboard-card" onclick="window.location.href='calendar.html'" style="cursor: pointer;">
+          <div class="dashboard-icon">📅</div>
+          <h3>Event Calendar</h3>
+          <p>Schedule and manage wedding events</p>
+        </div>
+        
+      </div>
+    </div>
+    
+    <div style="max-width: 800px; margin: 40px auto; padding: 0 20px; text-align: center;">
+      <h3>Recent Activity</h3>
+      <div id="recentActivity" style="background: #f9f9f9; padding: 20px; border-radius: 8px; margin-top: 20px;">
+        <p style="color: #666;">Your recent activities will appear here...</p>
+      </div>
+    </div>
+  </main>
+  
+  <footer>&copy; 2025 Wedding Planning System</footer>
+  
+  <!-- Modal Background -->
+  <div class="modal-bg" id="modalBG"></div>
+  <!-- Login Modal -->
+  <div class="modal" id="loginModal">
+    <span class="close-x" onclick="closeModal()">&times;</span>
+    <h3 style="margin-top:2px;">Login to your account</h3>
+    <form id="emailLoginForm">
+      <input id="loginEmail" type="email" placeholder="Email" required>
+      <input id="loginPassword" type="password" placeholder="Password" required>
+      <button type="submit" class="login-btn" style="width:100%; margin-bottom:15px;">Login</button>
+      <div id="loginMsg" style="color:red; font-size:0.98em; margin-bottom:9px;"></div>
+    </form>
+    <p style="text-align: center; margin-top: 15px;">
+      Don't have an account? <a href="registration.html">Sign up here</a>
+    </p>
+  </div>
+  
+  <script src="assets/js/login_modal.js"></script>
+  <script src="assets/js/shared_navigation.js"></script>
+  <script>
+    // Handle Get Started button
+    document.getElementById('getStartedBtn').addEventListener('click', function() {
+      document.getElementById('openLogin').click();
+    });
+
+    // Check authentication and show appropriate content
+    document.addEventListener('DOMContentLoaded', function() {
+      const isLoggedIn = localStorage.getItem('isLoggedIn');
+      const userName = localStorage.getItem('userName');
+      const userRole = localStorage.getItem('userRole');
+      
+      if (isLoggedIn === 'true') {
+        // Show logged-in content
+        document.getElementById('publicContent').style.display = 'none';
+        document.getElementById('loggedInContent').style.display = 'block';
+        
+        // Update user name
+        const userNameDisplay = document.getElementById('userNameDisplay');
+        if (userNameDisplay) {
+          userNameDisplay.textContent = userName || 'User';
+        }
+        
+        // Initialize navigation
+        sharedNavigation.handlePageNavigation(userRole, isLoggedIn);
+        
+        // Mark Home as active
+        const homeLink = document.querySelector('a[href="index.html"]');
+        if (homeLink) {
+          homeLink.classList.add('active');
+        }
+      } else {
+        // Show public content
+        document.getElementById('publicContent').style.display = 'block';
+        document.getElementById('loggedInContent').style.display = 'none';
+      }
+    });
+  </script>
+</body>
+</html>

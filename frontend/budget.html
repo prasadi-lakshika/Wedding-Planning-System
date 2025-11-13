@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Budget Manager - Wedding Planning System</title>
+  <link rel="stylesheet" href="assets/css/styles.css" />
+</head>
+<body>
+  <header>
+    <div class="navbar">
+      <nav id="mainNav">
+        <!-- Home link for logged-in users -->
+        <a href="index.html" class="nav-link common-link" style="display:none;">Home</a>
+        
+        <!-- Common links for all logged-in users -->
+        <a href="dashboard.html" class="nav-link common-link" style="display:none;">Dashboard</a>
+        <a href="theme_suggestions.html" class="nav-link common-link" style="display:none;">Theme Suggestions</a>
+        <a href="checklist.html" class="nav-link common-link" style="display:none;">Checklist</a>
+        <a href="budget.html" class="nav-link common-link active" style="display:none;">Budget</a>
+        <a href="calendar.html" class="nav-link common-link" style="display:none;">Calendar</a>
+        <a href="client_management.html" class="nav-link common-link" style="display:none;">Client Management</a>
+        
+        <!-- Planner-only links -->
+        <a href="my_account.html" class="nav-link planner-only-link" style="display:none;">My Account</a>
+        
+        <!-- Users section links -->
+        <a href="profile.html" class="nav-link admin-only-link" style="display:none;">Profile</a>
+        <a href="admin_dashboard.html" class="nav-link admin-only-link" style="display:none;">Users</a>
+        
+        <!-- Logout link (shown when logged in) -->
+        <a href="#" id="logoutLink" class="nav-link logout-link" style="display:none;">Logout</a>
+      </nav>
+      <button class="login-btn" id="openLogin">Sign In / Log In</button>
+    </div>
+  </header>
+  
+  <main class="main-content budget-page">
+    <section class="budget-header">
+      <div>
+        <h1>Budget Manager</h1>
+        <p class="budget-subtitle">Track planned vs actual spending for each project.</p>
+      </div>
+      <div id="budgetSummary" class="budget-summary" hidden>
+        <div class="summary-item">
+          <span class="label">Total Planned</span>
+          <span class="value" id="summaryPlanned">Rs.0.00</span>
+        </div>
+        <div class="summary-item">
+          <span class="label">Total Actual</span>
+          <span class="value" id="summaryActual">Rs.0.00</span>
+        </div>
+        <div class="summary-item variance">
+          <span class="label">Variance</span>
+          <span class="value" id="summaryVariance">Rs.0.00</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="budget-controls">
+      <div class="control-group">
+        <label for="projectSelect">Project</label>
+        <select id="projectSelect" class="control-input">
+          <option value="">Select a project</option>
+        </select>
+      </div>
+      <div class="control-actions">
+        <button id="addBudgetBtn" class="primary-btn" type="button">Add Budget Item</button>
+        <button id="exportCsvBtn" class="secondary-btn" type="button">Export CSV</button>
+        <button id="downloadPdfBtn" class="secondary-btn" type="button">Download PDF</button>
+      </div>
+    </section>
+
+    <section id="budgetAlerts">
+      <div id="budgetSuccess" class="budget-alert success" hidden></div>
+      <div id="budgetError" class="budget-alert error" hidden></div>
+    </section>
+
+    <section id="budgetTableSection" class="budget-table-card" hidden>
+      <table id="budgetTable">
+        <thead>
+          <tr>
+            <th>Category</th>
+            <th>Planned (Rs.)</th>
+            <th>Actual (Rs.)</th>
+            <th>Variance</th>
+            <th>Updated</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="budgetTbody">
+        </tbody>
+      </table>
+    </section>
+
+    <section id="budgetEmptyState" class="budget-empty" hidden>
+      <p>No budget entries found for this project.</p>
+      <button id="emptyAddBtn" class="primary-btn" type="button">Add Your First Budget Item</button>
+    </section>
+  </main>
+  
+  <footer>&copy; 2025 Wedding Planning System</footer>
+  
+  <!-- Modal Background -->
+  <div class="modal-bg" id="modalBG"></div>
+  <!-- Login Modal -->
+  <div class="modal" id="loginModal">
+    <span class="close-x" onclick="closeModal()">&times;</span>
+    <h3 style="margin-top:2px;">Login to your account</h3>
+    <form id="emailLoginForm">
+      <input id="loginEmail" type="email" placeholder="Email" required>
+      <input id="loginPassword" type="password" placeholder="Password" required>
+      <button type="submit" class="login-btn" style="width:100%; margin-bottom:15px;">Login</button>
+      <div id="loginMsg" style="color:red; font-size:0.98em; margin-bottom:9px;"></div>
+    </form>
+  </div>
+  
+  <div id="budgetFormModal" class="budget-modal" hidden>
+    <div class="budget-modal__overlay"></div>
+    <div class="budget-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="budgetFormTitle">
+      <button id="budgetModalClose" class="budget-modal__close" type="button" aria-label="Close budget form">&times;</button>
+      <h3 id="budgetFormTitle">Add Budget Item</h3>
+      <form id="budgetForm">
+        <input type="hidden" id="budgetItemId" />
+        <div class="form-row">
+          <div class="form-group">
+            <label for="budgetCategory">Category</label>
+            <input type="text" id="budgetCategory" placeholder="Venue, Dress, Photography..." required />
+          </div>
+          <div class="form-group">
+            <label for="budgetDate">Expense Date</label>
+            <input type="date" id="budgetDate" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="budgetPlanned">Planned Amount (Rs.)</label>
+            <input type="number" id="budgetPlanned" min="0" step="0.01" placeholder="0.00" required />
+          </div>
+          <div class="form-group">
+            <label for="budgetActual">Actual Amount (Rs.)</label>
+            <input type="number" id="budgetActual" min="0" step="0.01" placeholder="0.00" required />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="budgetVendor">Vendor / Payee</label>
+            <input type="text" id="budgetVendor" placeholder="Optional vendor or payee" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="budgetNotes">Notes</label>
+          <textarea id="budgetNotes" rows="3" placeholder="Additional details (optional)"></textarea>
+        </div>
+        <div class="modal-actions">
+          <button type="button" id="budgetModalCancel" class="secondary-btn">Cancel</button>
+          <button type="submit" class="primary-btn">Save Budget Item</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Load JavaScript files -->
+  <script src="assets/js/login_modal.js"></script>
+  <script src="assets/js/shared_navigation.js"></script>
+  <script src="assets/js/budget.js"></script>
+  <script>
+    // Initialize navigation using shared navigation system
+    sharedNavigation.initializePageNavigation();
+  </script>
+</body>
+</html>

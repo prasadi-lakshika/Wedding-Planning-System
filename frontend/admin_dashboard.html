@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Users - Wedding Planning System</title>
+  <link rel="stylesheet" href="assets/css/styles.css" />
+</head>
+<body>
+  <header>
+    <div class="navbar">
+      <nav id="mainNav">
+        <!-- Home link for logged-in users -->
+        <a href="index.html" class="nav-link common-link" style="display:none;">Home</a>
+        
+        <!-- Common links for all logged-in users -->
+        <a href="dashboard.html" class="nav-link common-link" style="display:none;">Dashboard</a>
+        <a href="theme_suggestions.html" class="nav-link common-link" style="display:none;">Theme Suggestions</a>
+        <a href="checklist.html" class="nav-link common-link" style="display:none;">Checklist</a>
+        <a href="budget.html" class="nav-link common-link" style="display:none;">Budget</a>
+        <a href="calendar.html" class="nav-link common-link" style="display:none;">Calendar</a>
+        <a href="client_management.html" class="nav-link common-link" style="display:none;">Client Management</a>
+        
+        <!-- Planner-only links -->
+        <a href="my_account.html" class="nav-link planner-only-link" style="display:none;">My Account</a>
+        
+        <!-- Users section links -->
+        <a href="profile.html" class="nav-link admin-only-link" style="display:none;">Profile</a>
+        <a href="admin_dashboard.html" class="nav-link admin-only-link active" style="display:none;">Users</a>
+        
+        <!-- Logout link (shown when logged in) -->
+        <a href="#" id="logoutLink" class="nav-link logout-link" style="display:none;">Logout</a>
+      </nav>
+      <button class="login-btn" id="openLogin">Sign In / Log In</button>
+    </div>
+  </header>
+  
+  <main class="main-content users-page">
+    <h2>Users</h2>
+    <section id="userManagementSection">
+      <div class="users-header">
+        <div>
+      <h3>User Management</h3>
+          <p class="users-subtitle">Create and manage administrator and planner accounts.</p>
+        </div>
+        <button id="resetFormBtn" class="secondary-btn" type="button">New User</button>
+      </div>
+
+      <div id="listAlert" class="profile-alert" hidden></div>
+
+      <div class="user-management-grid">
+        <form id="userForm" class="user-form">
+          <h4 id="formTitle">Create New User</h4>
+          <input type="hidden" id="userId" />
+
+          <div id="formAlert" class="profile-alert" hidden></div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="userName">Name</label>
+              <input type="text" id="userName" required />
+            </div>
+            <div class="form-group">
+              <label for="userEmail">Email</label>
+              <input type="email" id="userEmail" required />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="userPhone">Contact Number</label>
+              <input type="tel" id="userPhone" />
+            </div>
+            <div class="form-group">
+              <label for="userRole">Role</label>
+              <select id="userRole" required>
+          <option value="planner">Planner</option>
+          <option value="admin">Admin</option>
+        </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="userPassword">Password</label>
+              <input type="password" id="userPassword" minlength="6" required />
+            </div>
+            <div class="form-group">
+              <label for="userConfirmPassword">Confirm Password</label>
+              <input type="password" id="userConfirmPassword" minlength="6" required />
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button type="button" id="userCancelBtn" class="secondary-btn">Cancel</button>
+            <button type="submit" class="primary-btn">Save User</button>
+          </div>
+      </form>
+
+        <div class="user-list-card">
+        <h4>Existing Users</h4>
+        <table id="userListTable">
+          <thead>
+            <tr>
+                <th>Name</th>
+              <th>Email</th>
+                <th>Contact</th>
+              <th>Role</th>
+                <th>Updated</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="userListBody">
+              <!-- Users populated via JavaScript -->
+          </tbody>
+        </table>
+        </div>
+      </div>
+    </section>
+  </main>
+  
+  <footer>&copy; 2025 Wedding Planning System</footer>
+  
+  <!-- Modal Background -->
+  <div class="modal-bg" id="modalBG"></div>
+  <!-- Login Modal -->
+  <div class="modal" id="loginModal">
+    <span class="close-x" onclick="closeModal()">&times;</span>
+    <h3 style="margin-top:2px;">Login to your account</h3>
+    <form id="emailLoginForm">
+      <input id="loginEmail" type="email" placeholder="Email" required>
+      <input id="loginPassword" type="password" placeholder="Password" required>
+      <button type="submit" class="login-btn" style="width:100%; margin-bottom:15px;">Login</button>
+      <div id="loginMsg" style="color:red; font-size:0.98em; margin-bottom:9px;"></div>
+    </form>
+  </div>
+  
+  <!-- Load JavaScript files -->
+  <script src="assets/js/login_modal.js"></script>
+  <script src="assets/js/shared_navigation.js"></script>
+  <script src="assets/js/users.js"></script>
+</body>
+</html>
