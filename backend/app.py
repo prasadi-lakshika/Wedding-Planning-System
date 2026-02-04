@@ -12,14 +12,20 @@ from flask import Flask, jsonify, request
 from flask_login import current_user
 from functools import wraps
 from sqlalchemy import text
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 from config import Config
-from extensions import db, login_manager, cors
+from extensions import db, login_manager, cors, mail
 from routes.auth import auth_bp
 from routes.wedding_planning import wedding_bp
 from routes.projects import projects_bp
 from routes.admin_profile import admin_profile_bp
+from routes.admin_data_management import admin_data_bp
 from routes.budget import budget_bp
+from routes.dashboard import dashboard_bp
 
 
 def create_app():
@@ -60,6 +66,7 @@ def _initialize_extensions(app):
     """Initialize Flask extensions."""
     db.init_app(app)
     login_manager.init_app(app)
+    mail.init_app(app)
     cors.init_app(app, resources={
         r"/*": {
             "origins": ["*"],
@@ -76,7 +83,9 @@ def _register_blueprints(app):
     app.register_blueprint(wedding_bp)
     app.register_blueprint(projects_bp)
     app.register_blueprint(admin_profile_bp)
+    app.register_blueprint(admin_data_bp)
     app.register_blueprint(budget_bp)
+    app.register_blueprint(dashboard_bp)
 
 
 def _import_models():
@@ -84,11 +93,14 @@ def _import_models():
     from models.user import User  # noqa: F401
     from models.project import Project  # noqa: F401
     from models.wedding_planning import (  # noqa: F401
-        CulturalColors, ColorRules, FoodLocations, ColorMappings
+        CulturalColors, ColorRules, FoodLocations, ColorMappings, RestrictedColours
     )
     from models.company import Company  # noqa: F401
     from models.theme_suggestion import ThemeSuggestion  # noqa: F401
     from models.budget_item import BudgetItem  # noqa: F401
+    from models.checklist_task import ChecklistTask  # noqa: F401
+    from models.password_reset_token import PasswordResetToken  # noqa: F401
+    from models.wedding_planning import WeddingType  # noqa: F401
 
 
 def _configure_authentication(app):
@@ -108,7 +120,8 @@ def _configure_authentication(app):
         """Global authentication middleware."""
         # Skip auth check for public endpoints
         skip_endpoints = [
-            'static', 'auth.login', 'auth.register', 'index', 'health', 'test',
+            'static', 'auth.login', 'auth.register', 'auth.forgot_password',
+            'auth.reset_password', 'auth.verify_reset_token', 'index', 'health', 'test',
             'wedding.suggest_wedding_details', 'wedding.get_wedding_types', 
             'wedding.get_colors_for_wedding_type', 'wedding.wedding_health_check',
             'wedding.rebuild_tree', 'wedding.get_tree_info',
@@ -133,6 +146,7 @@ def _initialize_database(app):
         try:
             db.create_all()
             _ensure_user_profile_columns()
+            _ensure_checklist_tasks_table()
             print("Database tables ready!")
         except Exception as e:
             print(f"Database error: {e}")
@@ -227,6 +241,83 @@ def _migrate_company_profile_data(user_columns):
         db.session.commit()
     except Exception:
         db.session.rollback()
+
+
+def _ensure_checklist_tasks_table():
+    """Ensure checklist_tasks table exists with correct schema."""
+    inspector = db.inspect(db.engine)
+    try:
+        # Check if table exists
+        tables = inspector.get_table_names()
+        if 'checklist_tasks' not in tables:
+            # Table doesn't exist, create it
+            from models.checklist_task import ChecklistTask
+            ChecklistTask.__table__.create(db.engine)
+            print("Created checklist_tasks table.")
+            return
+
+        # Table exists, verify columns
+        columns = {col['name']: col for col in inspector.get_columns('checklist_tasks')}
+        required_columns = {
+            'id': {'type': 'INTEGER', 'nullable': False},
+            'project_id': {'type': 'INTEGER', 'nullable': False},
+            'title': {'type': 'VARCHAR', 'nullable': False},
+            'description': {'type': 'TEXT', 'nullable': True},
+            'status': {'type': 'ENUM', 'nullable': False},
+            'due_date': {'type': 'DATE', 'nullable': True},
+            'assigned_to': {'type': 'INTEGER', 'nullable': True},
+            'created_by': {'type': 'INTEGER', 'nullable': True},
+            'created_at': {'type': 'DATETIME', 'nullable': False},
+            'updated_at': {'type': 'DATETIME', 'nullable': False},
+        }
+
+        needs_commit = False
+        
+        # Check for column rename: assignee_id -> assigned_to
+        if 'assignee_id' in columns and 'assigned_to' not in columns:
+            # Column needs to be renamed from assignee_id to assigned_to
+            try:
+                db.session.execute(text(
+                    "ALTER TABLE checklist_tasks CHANGE COLUMN assignee_id assigned_to INT NULL"
+                ))
+                print("Renamed column 'assignee_id' to 'assigned_to' in checklist_tasks table.")
+                needs_commit = True
+            except Exception as exc:
+                if 'Duplicate column name' not in str(exc) and 'doesn\'t exist' not in str(exc).lower() and 'unknown column' not in str(exc).lower():
+                    print(f"Warning: Unable to rename column 'assignee_id': {exc}")
+
+        # Check if title column needs to be updated to VARCHAR(255)
+        if 'title' in columns:
+            col_info = columns['title']
+            # Check if length is less than 255 (handles both integer and None cases)
+            col_length = col_info.get('length', 0)
+            if col_length and col_length < 255:
+                try:
+                    db.session.execute(text(
+                        "ALTER TABLE checklist_tasks MODIFY COLUMN title VARCHAR(255) NOT NULL"
+                    ))
+                    print("Updated 'title' column to VARCHAR(255) in checklist_tasks table.")
+                    needs_commit = True
+                except Exception as exc:
+                    if 'Duplicate column name' not in str(exc):
+                        print(f"Warning: Unable to update 'title' column: {exc}")
+
+        if needs_commit:
+            try:
+                db.session.commit()
+                print("Committed checklist_tasks table alterations.")
+            except Exception as exc:
+                db.session.rollback()
+                print(f"Warning: Unable to commit checklist_tasks table alterations: {exc}")
+
+    except Exception as exc:
+        print(f"Warning: Unable to inspect or create checklist_tasks table: {exc}")
+        # Try to create the table anyway
+        try:
+            from models.checklist_task import ChecklistTask
+            ChecklistTask.__table__.create(db.engine, checkfirst=True)
+        except Exception as create_exc:
+            print(f"Warning: Unable to create checklist_tasks table: {create_exc}")
 
 
 def _register_core_routes(app):

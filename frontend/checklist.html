@@ -2,8 +2,468 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Wedding Checklist - Wedding Planning System</title>
   <link rel="stylesheet" href="assets/css/styles.css" />
+  <style>
+    .checklist-page {
+      max-width: 1200px;
+      width: 95%;
+      margin: 0 auto;
+    }
+
+    .checklist-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .checklist-header h1 {
+      margin: 0;
+      font-size: 1.8rem;
+      color: #3f3a34;
+    }
+
+    .checklist-controls {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .checklist-stats {
+      display: flex;
+      gap: 24px;
+      margin-bottom: 24px;
+      padding: 20px;
+      background: linear-gradient(135deg, #f8f5ec, #fdfbf5);
+      border: 1px solid #efe4ca;
+      border-radius: 14px;
+      box-shadow: 0 8px 20px rgba(38, 31, 15, 0.08);
+      flex-wrap: wrap;
+    }
+
+    .stat-item {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-width: 120px;
+    }
+
+    .stat-label {
+      font-size: 0.85rem;
+      color: #6f6554;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .stat-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #3f3a34;
+    }
+
+    .stat-value.progress {
+      color: #d4af37;
+    }
+
+    .stat-value.completed {
+      color: #10b981;
+    }
+
+    .stat-value.pending {
+      color: #f59e0b;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 24px;
+      background: #ece6cd;
+      border-radius: 12px;
+      overflow: hidden;
+      margin-top: 8px;
+      position: relative;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #d4af37, #f4d03f);
+      border-radius: 12px;
+      transition: width 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-weight: 600;
+      font-size: 0.85rem;
+    }
+
+    .checklist-form-container {
+      background: #fff;
+      border: 1px solid #ece6cd;
+      border-radius: 14px;
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: 0 8px 20px rgba(38, 31, 15, 0.08);
+    }
+
+    .checklist-form {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 16px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .form-group.full-width {
+      grid-column: 1 / -1;
+    }
+
+    .form-group label {
+      font-size: 0.9rem;
+      color: #3f3a34;
+      font-weight: 600;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      padding: 10px 12px;
+      border: 1px solid #d9d3b8;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      color: #3f3a34;
+      transition: border-color 0.2s;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: #d4af37;
+      box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1);
+    }
+
+    .form-group textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    .form-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+      padding-top: 8px;
+      border-top: 1px solid #ece6cd;
+    }
+
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: #d4af37;
+      color: #fff;
+    }
+
+    .btn-primary:hover {
+      background: #c19b26;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
+    }
+
+    .btn-secondary {
+      background: #ece6cd;
+      color: #3f3a34;
+    }
+
+    .btn-secondary:hover {
+      background: #d9d3b8;
+    }
+
+    .btn-danger {
+      background: #ef4444;
+      color: #fff;
+    }
+
+    .btn-danger:hover {
+      background: #dc2626;
+    }
+
+    .tasks-container {
+      background: #fff;
+      border: 1px solid #ece6cd;
+      border-radius: 14px;
+      padding: 24px;
+      box-shadow: 0 8px 20px rgba(38, 31, 15, 0.08);
+      min-height: 400px;
+    }
+
+    .tasks-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 2px solid #ece6cd;
+    }
+
+    .tasks-header h2 {
+      margin: 0;
+      font-size: 1.4rem;
+      color: #3f3a34;
+    }
+
+    .tasks-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .task-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      padding: 16px;
+      background: #fafafa;
+      border: 1px solid #ece6cd;
+      border-radius: 12px;
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+
+    .task-item:hover {
+      background: #f8f5ec;
+      border-color: #d4af37;
+      box-shadow: 0 4px 12px rgba(38, 31, 15, 0.1);
+      transform: translateY(-2px);
+    }
+
+    .task-item.completed {
+      opacity: 0.7;
+      background: #f0fdf4;
+      border-color: #86efac;
+    }
+
+    .task-checkbox {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .task-checkbox input[type="checkbox"] {
+      width: 20px;
+      height: 20px;
+      cursor: pointer;
+      accent-color: #d4af37;
+    }
+
+    .task-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .task-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #3f3a34;
+      margin-bottom: 8px;
+      word-wrap: break-word;
+    }
+
+    .task-title.completed {
+      text-decoration: line-through;
+      color: #6f6554;
+    }
+
+    .task-meta {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      font-size: 0.85rem;
+      color: #6f6554;
+    }
+
+    .task-meta-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .status-badge {
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .status-badge.pending {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .status-badge.in_progress {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+
+    .status-badge.completed {
+      background: #d1fae5;
+      color: #065f46;
+    }
+
+    .task-description {
+      margin-top: 8px;
+      padding: 12px;
+      background: #fff;
+      border-radius: 8px;
+      border: 1px solid #ece6cd;
+      font-size: 0.9rem;
+      color: #6f6554;
+      line-height: 1.6;
+    }
+
+    .task-actions {
+      display: flex;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .task-actions button {
+      padding: 6px 12px;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .task-actions .btn-edit {
+      background: #ece6cd;
+      color: #3f3a34;
+    }
+
+    .task-actions .btn-edit:hover {
+      background: #d9d3b8;
+    }
+
+    .task-actions .btn-delete {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .task-actions .btn-delete:hover {
+      background: #fecaca;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #6f6554;
+    }
+
+    .empty-state-icon {
+      font-size: 4rem;
+      margin-bottom: 16px;
+      opacity: 0.5;
+    }
+
+    .empty-state-text {
+      font-size: 1.1rem;
+      margin-bottom: 8px;
+      color: #3f3a34;
+    }
+
+    .empty-state-hint {
+      font-size: 0.9rem;
+      color: #6f6554;
+    }
+
+    .loading-indicator {
+      text-align: center;
+      padding: 40px;
+      color: #6f6554;
+    }
+
+    .message {
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      display: none;
+    }
+
+    .message.show {
+      display: block;
+    }
+
+    .message.success {
+      background: #d1fae5;
+      color: #065f46;
+      border: 1px solid #6ee7b7;
+    }
+
+    .message.error {
+      background: #fee2e2;
+      color: #991b1b;
+      border: 1px solid #fca5a5;
+    }
+
+    .message.info {
+      background: #dbeafe;
+      color: #1e40af;
+      border: 1px solid #93c5fd;
+    }
+
+    @media (max-width: 768px) {
+      .checklist-header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .checklist-stats {
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+
+      .task-item {
+        flex-direction: column;
+      }
+
+      .task-actions {
+        width: 100%;
+        justify-content: flex-end;
+      }
+    }
+  </style>
 </head>
 <body>
   <header>
@@ -23,9 +483,10 @@
         <!-- Planner-only links -->
         <a href="my_account.html" class="nav-link planner-only-link" style="display:none;">My Account</a>
         
-        <!-- Users section links -->
+        <!-- Admin-only links -->
         <a href="profile.html" class="nav-link admin-only-link" style="display:none;">Profile</a>
         <a href="admin_dashboard.html" class="nav-link admin-only-link" style="display:none;">Users</a>
+        <a href="admin_data_management.html" class="nav-link admin-only-link" style="display:none;">Data Management</a>
         
         <!-- Logout link (shown when logged in) -->
         <a href="#" id="logoutLink" class="nav-link logout-link" style="display:none;">Logout</a>
@@ -34,49 +495,101 @@
     </div>
   </header>
   
-  <main class="main-content">
-    <h2>Wedding Planning Checklist</h2>
+  <main class="main-content checklist-page">
+    <div class="checklist-header">
+      <h1>Wedding Planning Checklist</h1>
+    </div>
+
+    <div class="message" id="taskMessage"></div>
+
+    <div class="checklist-stats">
+      <div class="stat-item">
+        <div class="stat-label">Progress</div>
+        <div class="stat-value progress" id="progressPercent">0%</div>
+        <div class="progress-bar">
+          <div class="progress-fill" id="progressFill" style="width: 0%;">0%</div>
+        </div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">Total Tasks</div>
+        <div class="stat-value" id="totalTasks">0</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">Completed</div>
+        <div class="stat-value completed" id="completedTasks">0</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">In Progress</div>
+        <div class="stat-value pending" id="inProgressTasks">0</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">Pending</div>
+        <div class="stat-value pending" id="pendingTasks">0</div>
+      </div>
+    </div>
+
+    <div class="checklist-form-container">
     <form id="addTaskForm" class="checklist-form">
       <div class="form-row">
         <div class="form-group">
-          <label for="projectSelect">Select Project:</label>
+            <label for="projectSelect">Project *</label>
           <select id="projectSelect" required>
             <option value="">Select a project</option>
           </select>
         </div>
         <div class="form-group">
-          <label for="assigneeSelect">Assign to:</label>
+            <label for="assigneeSelect">Assign To *</label>
           <select id="assigneeSelect" required>
             <option value="">Select assignee</option>
           </select>
         </div>
       </div>
       <div class="form-row">
-        <div class="form-group">
-          <label for="taskInput">Task:</label>
-          <input type="text" id="taskInput" placeholder="Add a new task..." required />
+          <div class="form-group" style="flex: 2;">
+            <label for="taskInput">Task Title *</label>
+            <input type="text" id="taskInput" placeholder="Enter task title..." required />
         </div>
         <div class="form-group">
-          <label for="statusSelect">Status:</label>
+            <label for="statusSelect">Status *</label>
           <select id="statusSelect" required>
             <option value="pending">Pending</option>
             <option value="in_progress">In Progress</option>
             <option value="completed">Completed</option>
           </select>
         </div>
-      </div>
-      <button type="submit">Add/Update Task</button>
-    </form>
-    <div id="progressContainer" style="margin-bottom: 15px;">
-      <strong>Progress:</strong> <span id="progressPercent">0%</span> completed
+          <div class="form-group">
+            <label for="dueDateInput">Due Date</label>
+            <input type="date" id="dueDateInput" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group full-width">
+            <label for="descriptionInput">Description (Optional)</label>
+            <textarea id="descriptionInput" rows="3" placeholder="Add task details, notes, or instructions..."></textarea>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button type="button" id="cancelEditBtn" class="btn btn-secondary" style="display:none;">Cancel</button>
+          <button type="submit" class="btn btn-primary">Add Task</button>
+        </div>
+      </form>
     </div>
-    <ul id="taskList"></ul>
+
+    <div class="tasks-container">
+      <div class="tasks-header">
+        <h2>Tasks</h2>
+        <div id="taskSummary" style="display:none; font-size: 0.9rem; color: #6f6554;"></div>
+      </div>
+      <div id="tasksLoading" class="loading-indicator" style="display:none;">Loading tasks...</div>
+      <div id="taskList" class="tasks-list"></div>
+    </div>
   </main>
   
   <footer>&copy; 2025 Wedding Planning System</footer>
   
   <!-- Modal Background -->
   <div class="modal-bg" id="modalBG"></div>
+  
   <!-- Login Modal -->
   <div class="modal" id="loginModal">
     <span class="close-x" onclick="closeModal()">&times;</span>

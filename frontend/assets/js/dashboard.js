@@ -1,6 +1,8 @@
 // Dashboard Navigation and Data Management
 console.log('=== DASHBOARD.JS LOADING ===');
 
+const API_BASE = 'http://localhost:5000';
+
 document.addEventListener('DOMContentLoaded', () => {
   console.log('=== DASHBOARD.JS STARTED ===');
   
@@ -13,7 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // NAVIGATION MANAGEMENT
   handleNavigation(userRole, isLoggedIn);
   
-  // DASHBOARD DATA MANAGEMENT
+  // DASHBOARD DATA MANAGEMENT - Now uses backend API
   handleDashboardData();
   
   console.log('=== DASHBOARD.JS COMPLETE ===');
@@ -34,7 +36,14 @@ function handleNavigation(userRole, isLoggedIn) {
   console.log('- Logout link:', !!logoutLink);
   console.log('- Common links:', commonLinks.length);
   console.log('- Planner links:', plannerLinks.length);
-  console.log('- Users links:', adminLinks.length);
+  console.log('- Admin links:', adminLinks.length);
+  
+  // List all admin links found
+  adminLinks.forEach((link, idx) => {
+    console.log(`  Admin link ${idx + 1}: ${link.textContent.trim()} (${link.getAttribute('href')})`);
+  });
+  
+  // Normalize Users link label
   const usersNavLink = Array.from(adminLinks).find(link => link.getAttribute('href') === 'admin_dashboard.html');
   if (usersNavLink) {
     usersNavLink.textContent = 'Users';
@@ -80,40 +89,159 @@ function handleNavigation(userRole, isLoggedIn) {
     console.log(`${index + 1}. ${link.textContent.trim()}: ${shouldShow ? 'SHOWN' : 'HIDDEN'}`);
   });
 
-  // Handle planner-only links (My Account)
+  // Handle planner-only links (My Account) - coordinators also see this
   console.log('=== PLANNER LINKS ===');
   plannerLinks.forEach((link, index) => {
-    const shouldShow = isLoggedIn === 'true' && userRole === 'planner';
+    const shouldShow = isLoggedIn === 'true' && (userRole === 'planner' || userRole === 'coordinator');
     link.style.display = shouldShow ? 'inline' : 'none';
     console.log(`${index + 1}. ${link.textContent.trim()}: ${shouldShow ? 'SHOWN' : 'HIDDEN'}`);
   });
 
-  // Handle users-only links (Profile, Users)
-  console.log('=== USERS LINKS ===');
+  // Handle admin-only links (Profile, Users, Data Management)
+  console.log('=== ADMIN LINKS ===');
   adminLinks.forEach((link, index) => {
+    const href = link.getAttribute('href');
+    const text = link.textContent.trim();
     const shouldShow = isLoggedIn === 'true' && userRole === 'admin';
     link.style.display = shouldShow ? 'inline' : 'none';
-    console.log(`${index + 1}. ${link.textContent.trim()}: ${shouldShow ? 'SHOWN' : 'HIDDEN'}`);
+    console.log(`${index + 1}. ${text} (${href}): ${shouldShow ? 'SHOWN' : 'HIDDEN'}`);
   });
   
   console.log('=== NAVIGATION COMPLETE ===');
 }
 
-function handleDashboardData() {
+async function handleDashboardData() {
   console.log('=== HANDLING DASHBOARD DATA ===');
+  
+  // Show loading state
+  showLoadingState(true);
+  
+  try {
+    // Fetch dashboard statistics from backend API
+    const response = await fetch(`${API_BASE}/api/dashboard/stats`, {
+      method: 'GET',
+      credentials: 'include', // Include session cookies
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log('Dashboard stats received:', data);
+
+    if (data.error) {
+      throw new Error(data.message || data.error);
+    }
+
+    const stats = data.stats || {};
+
+    // Update dashboard statistics
+    updateDashboardStats(stats);
+
+    // Update ongoing projects list
+    updateProjectsList(stats.ongoing_projects || []);
+    
+    console.log('=== DASHBOARD DATA COMPLETE ===');
+  } catch (error) {
+    console.error('Error handling dashboard data:', error);
+    
+    // Fallback to localStorage if API fails (backward compatibility)
+    console.log('Falling back to localStorage...');
+    handleDashboardDataFallback();
+  } finally {
+    showLoadingState(false);
+  }
+}
+
+function updateDashboardStats(stats) {
+  // Update Pending Tasks count
+  const pendingTasksElement = document.getElementById('pendingTasksCount');
+  if (pendingTasksElement) {
+    pendingTasksElement.textContent = stats.pending_tasks || 0;
+    console.log('Pending tasks updated:', stats.pending_tasks || 0);
+  }
+
+  // Update Total Budget amount
+  const totalBudgetElement = document.getElementById('totalBudgetAmount');
+  if (totalBudgetElement) {
+    const budgetAmount = stats.total_budget || 0;
+    totalBudgetElement.textContent = budgetAmount.toFixed(2);
+    console.log('Total budget updated:', budgetAmount.toFixed(2));
+  }
+
+  // Update Active Clients count
+  const activeClientsElement = document.getElementById('activeClientsCount');
+  if (activeClientsElement) {
+    activeClientsElement.textContent = stats.active_clients || 0;
+    console.log('Active clients updated:', stats.active_clients || 0);
+  }
+
+  // Update Upcoming Events count
+  const upcomingEventsElement = document.getElementById('upcomingEventsCount');
+  if (upcomingEventsElement) {
+    upcomingEventsElement.textContent = stats.upcoming_events || 0;
+    console.log('Upcoming events updated:', stats.upcoming_events || 0);
+  }
+}
+
+function updateProjectsList(projects) {
+  const projectsList = document.getElementById('projectsList');
+  if (!projectsList) {
+    return;
+  }
+
+  projectsList.innerHTML = '';
+
+  if (projects.length === 0) {
+    const noProjectsItem = document.createElement('li');
+    noProjectsItem.textContent = 'No ongoing projects.';
+    projectsList.appendChild(noProjectsItem);
+    console.log('No projects message added');
+  } else {
+    projects.forEach((project) => {
+      const projectItem = document.createElement('li');
+      const projectLink = document.createElement('a');
+      projectLink.href = `client_management.html?projectId=${encodeURIComponent(project.id)}`;
+      projectLink.textContent = `${project.bride_name || 'Bride'} & ${project.groom_name || 'Groom'}`;
+      projectItem.appendChild(projectLink);
+      projectsList.appendChild(projectItem);
+    });
+    console.log('Projects list updated with', projects.length, 'projects');
+  }
+}
+
+function showLoadingState(show) {
+  // Optional: Add loading indicators
+  const cards = document.querySelectorAll('.dashboard-card');
+  cards.forEach(card => {
+    if (show) {
+      card.style.opacity = '0.6';
+    } else {
+      card.style.opacity = '1';
+    }
+  });
+}
+
+function handleDashboardDataFallback() {
+  // Fallback to localStorage if backend API is not available
+  console.log('Using localStorage fallback for dashboard data');
   
   try {
     // Load projects from localStorage
     const projects = JSON.parse(localStorage.getItem('weddingProjects')) || [];
-    console.log('Projects loaded:', projects.length);
+    console.log('Projects loaded from localStorage:', projects.length);
 
     // Load tasks from localStorage
     const tasks = JSON.parse(localStorage.getItem('tasks')) || [];
-    console.log('Tasks loaded:', tasks.length);
+    console.log('Tasks loaded from localStorage:', tasks.length);
 
     // Load budget items from localStorage
     const budgetItems = JSON.parse(localStorage.getItem('budget')) || [];
-    console.log('Budget items loaded:', budgetItems.length);
+    console.log('Budget items loaded from localStorage:', budgetItems.length);
 
     // Calculate pending tasks count
     const pendingTasksCount = tasks.filter(task => task.status !== 'completed').length;
@@ -121,45 +249,21 @@ function handleDashboardData() {
     // Calculate total budget amount
     const totalBudgetAmount = budgetItems.reduce((sum, item) => sum + (item.actual || 0), 0);
 
-    // Update dashboard stats
-    const pendingTasksElement = document.getElementById('pendingTasksCount');
-    const totalBudgetElement = document.getElementById('totalBudgetAmount');
-    
-    if (pendingTasksElement) {
-      pendingTasksElement.textContent = pendingTasksCount;
-      console.log('Pending tasks updated:', pendingTasksCount);
-    }
-    
-    if (totalBudgetElement) {
-      totalBudgetElement.textContent = totalBudgetAmount.toFixed(2);
-      console.log('Total budget updated:', totalBudgetAmount.toFixed(2));
-    }
+    // Update dashboard stats with fallback data
+    updateDashboardStats({
+      pending_tasks: pendingTasksCount,
+      total_budget: totalBudgetAmount,
+      active_clients: 0,
+      upcoming_events: 0
+    });
 
     // Update projects list
-    const projectsList = document.getElementById('projectsList');
-    if (projectsList) {
-      projectsList.innerHTML = '';
-
-      if (projects.length === 0) {
-        const noProjectsItem = document.createElement('li');
-        noProjectsItem.textContent = 'No ongoing projects.';
-        projectsList.appendChild(noProjectsItem);
-        console.log('No projects message added');
-      } else {
-        projects.forEach((project, index) => {
-          const projectItem = document.createElement('li');
-          const projectLink = document.createElement('a');
-          projectLink.href = `client_management.html?projectId=${encodeURIComponent(project.id)}`;
-          projectLink.textContent = `${project.brideName || 'Bride'} & ${project.groomName || 'Groom'}`;
-          projectItem.appendChild(projectLink);
-          projectsList.appendChild(projectItem);
-        });
-        console.log('Projects list updated with', projects.length, 'projects');
-      }
-    }
-    
-    console.log('=== DASHBOARD DATA COMPLETE ===');
+    updateProjectsList(projects.map(p => ({
+      id: p.id,
+      bride_name: p.brideName || p.bride_name,
+      groom_name: p.groomName || p.groom_name
+    })));
   } catch (error) {
-    console.error('Error handling dashboard data:', error);
+    console.error('Error in fallback data handling:', error);
   }
 }

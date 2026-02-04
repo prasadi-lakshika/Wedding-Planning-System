@@ -158,32 +158,42 @@ def get_wedding_types():
                 'message': 'No wedding types found in database'
             }), 200
         
+        # Get wedding types from wedding_types table with details
+        from models.wedding_planning import WeddingType, RestrictedColours
+        from extensions import db
+        from services.wedding_service import get_wedding_type_details
+        
         # Enhance wedding types with additional information
         enhanced_types = []
-        for wt in wedding_types:
+        for wt_name in wedding_types:
             try:
+                # Get wedding type details from wedding_types table
+                wt_details = get_wedding_type_details(wt_name)
+                
+                # Get description from wedding_types table or use default
+                description = wt_details.get('description') if wt_details else f"Traditional {wt_name.lower()} ceremony"
+                
                 # Count available colors
-                color_count = len(get_available_colors_for_wedding_type(wt))
+                color_count = len(get_available_colors_for_wedding_type(wt_name))
                 
                 # Check if this wedding type has restrictions
                 # Query the restricted_colours table to see if this wedding type has any restrictions
-                from models.wedding_planning import RestrictedColours
-                from extensions import db
                 has_restrictions = RestrictedColours.query.filter(
-                    db.func.lower(RestrictedColours.wedding_type) == wt.lower()
+                    db.func.lower(RestrictedColours.wedding_type) == wt_name.lower()
                 ).first() is not None
                 
                 enhanced_types.append({
-                    'name': wt,
-                    'description': f"Traditional {wt.lower()} ceremony",
+                    'name': wt_name,
+                    'description': description,
                     'available_colors': color_count,
                     'has_restrictions': has_restrictions
                 })
             except Exception as e:
+                print(f"Error enhancing wedding type {wt_name}: {e}")
                 # If there's an error with a specific wedding type, add it without enhancement
                 enhanced_types.append({
-                    'name': wt,
-                    'description': f"Traditional {wt.lower()} ceremony",
+                    'name': wt_name,
+                    'description': f"Traditional {wt_name.lower()} ceremony",
                     'available_colors': 0,
                     'has_restrictions': False
                 })

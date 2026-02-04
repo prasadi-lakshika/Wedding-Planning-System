@@ -147,8 +147,153 @@ function handleLogout() {
   location.href = 'index.html';
 }
 
+// Forgot Password Modal Management
+const forgotPasswordModal = document.getElementById('forgotPasswordModal');
+
+// Open forgot password modal
+if (document.getElementById('forgotPasswordLink')) {
+  document.getElementById('forgotPasswordLink').addEventListener('click', function(e) {
+    e.preventDefault();
+    closeModal(); // Close login modal
+    if (forgotPasswordModal) {
+      forgotPasswordModal.style.display = 'block';
+      forgotPasswordModal.classList.add('show');
+      if (modalBG) {
+        modalBG.classList.add('show');
+      }
+    }
+  });
+}
+
+// Close forgot password modal function
+window.closeForgotPasswordModal = function() {
+  if (forgotPasswordModal) {
+    forgotPasswordModal.style.display = 'none';
+    forgotPasswordModal.classList.remove('show');
+    if (modalBG) {
+      modalBG.classList.remove('show');
+    }
+    // Clear form and messages
+    const form = document.getElementById('forgotPasswordForm');
+    if (form) {
+      form.reset();
+    }
+    const msg = document.getElementById('forgotPasswordMsg');
+    if (msg) {
+      msg.textContent = '';
+    }
+    const success = document.getElementById('forgotPasswordSuccess');
+    if (success) {
+      success.style.display = 'none';
+      success.textContent = '';
+    }
+  }
+}
+
+// Back to login link
+if (document.getElementById('backToLoginLink')) {
+  document.getElementById('backToLoginLink').addEventListener('click', function(e) {
+    e.preventDefault();
+    closeForgotPasswordModal();
+    if (modal) {
+      modal.classList.add('show');
+      if (modalBG) {
+        modalBG.classList.add('show');
+      }
+    }
+  });
+}
+
+// Handle forgot password form submission
+if (document.getElementById('forgotPasswordForm')) {
+  document.getElementById('forgotPasswordForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const email = document.getElementById('forgotPasswordEmail').value.trim();
+    const msgDiv = document.getElementById('forgotPasswordMsg');
+    const successDiv = document.getElementById('forgotPasswordSuccess');
+    const submitBtn = this.querySelector('button[type="submit"]');
+    
+    // Clear previous messages
+    if (msgDiv) {
+      msgDiv.textContent = '';
+    }
+    if (successDiv) {
+      successDiv.style.display = 'none';
+      successDiv.textContent = '';
+    }
+    
+    // Basic validation
+    if (!email) {
+      if (msgDiv) {
+        msgDiv.textContent = 'Please enter your email address.';
+        msgDiv.style.color = '#dc3545';
+      }
+      return;
+    }
+    
+    if (!isValidEmail(email)) {
+      if (msgDiv) {
+        msgDiv.textContent = 'Please enter a valid email address.';
+        msgDiv.style.color = '#dc3545';
+      }
+      return;
+    }
+    
+    // Show loading state
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Sending...';
+    
+    // Make API call to backend
+    fetch('http://localhost:5000/auth/forgot-password', {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ email })
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return response.json();
+    })
+    .then(data => {
+      if (data.error) {
+        if (msgDiv) {
+          msgDiv.textContent = data.error;
+          msgDiv.style.color = '#dc3545';
+        }
+      } else {
+        // Show success message
+        if (successDiv) {
+          successDiv.textContent = data.message || 'If an account exists with this email, a password reset link has been sent.';
+          successDiv.style.color = '#28a745';
+          successDiv.style.display = 'block';
+        }
+        // Clear email field
+        document.getElementById('forgotPasswordEmail').value = '';
+      }
+    })
+    .catch(error => {
+      console.error('Forgot password error:', error);
+      if (msgDiv) {
+        msgDiv.textContent = 'Network error. Please check your connection and try again.';
+        msgDiv.style.color = '#dc3545';
+      }
+    })
+    .finally(() => {
+      // Reset button state
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Send Reset Link';
+    });
+  });
+}
+
 // Export functions for use in other scripts
 window.loginModal = {
   closeModal,
+  closeForgotPasswordModal,
   handleLogout
 };

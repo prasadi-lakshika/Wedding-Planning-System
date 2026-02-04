@@ -2,8 +2,558 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Event Calendar - Wedding Planning System</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Calendar - Wedding Planning System</title>
   <link rel="stylesheet" href="assets/css/styles.css" />
+  <style>
+    .calendar-page {
+      max-width: 1400px;
+      width: 95%;
+      margin: 0 auto;
+    }
+
+    .calendar-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .calendar-header h1 {
+      margin: 0;
+      font-size: 1.8rem;
+      color: #3f3a34;
+    }
+
+    .calendar-controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .view-toggle {
+      display: flex;
+      gap: 4px;
+      background: #fff;
+      border: 1px solid #ece6cd;
+      border-radius: 10px;
+      padding: 4px;
+    }
+
+    .view-toggle button {
+      padding: 8px 16px;
+      border: none;
+      background: transparent;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      color: #6f6554;
+      transition: all 0.2s;
+    }
+
+    .view-toggle button.active {
+      background: #d4af37;
+      color: #fff;
+      font-weight: 600;
+    }
+
+    .nav-buttons {
+      display: flex;
+      gap: 8px;
+    }
+
+    .nav-btn {
+      padding: 8px 16px;
+      border: 1px solid #ece6cd;
+      background: #fff;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      color: #6f6554;
+      transition: all 0.2s;
+    }
+
+    .nav-btn:hover {
+      background: #f8f5ec;
+      border-color: #d4af37;
+    }
+
+    .calendar-filters {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 20px;
+      padding: 16px;
+      background: #fff;
+      border: 1px solid #ece6cd;
+      border-radius: 12px;
+      flex-wrap: wrap;
+    }
+
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-width: 150px;
+    }
+
+    .filter-group label {
+      font-size: 0.85rem;
+      color: #6f6554;
+      font-weight: 600;
+    }
+
+    .filter-select {
+      padding: 8px 12px;
+      border: 1px solid #d9d3b8;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      background: #fff;
+      color: #3f3a34;
+    }
+
+    .calendar-container {
+      background: #fff;
+      border: 1px solid #ece6cd;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 8px 20px rgba(38, 31, 15, 0.08);
+      min-height: 600px;
+    }
+
+    .calendar-month-view {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed; /* Ensure equal column widths */
+    }
+
+    .calendar-month-view th {
+      padding: 12px;
+      text-align: center;
+      font-weight: 600;
+      color: #6f6554;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 2px solid #ece6cd;
+      width: 14.28%; /* Equal width for 7 columns (100% / 7 ≈ 14.28%) */
+    }
+
+    .calendar-month-view td {
+      padding: 8px;
+      vertical-align: top;
+      height: 100px;
+      border: 1px solid #f5f0e0;
+      cursor: pointer;
+      transition: background 0.2s;
+      width: 14.28%; /* Equal width for 7 columns */
+      overflow: hidden; /* Prevent content from stretching columns */
+      word-wrap: break-word; /* Break long words if needed */
+    }
+
+    .calendar-month-view td:hover {
+      background: #f8f5ec;
+    }
+
+    .calendar-month-view td.other-month {
+      color: #ccc;
+      background: #fafafa;
+    }
+
+    .calendar-month-view td.today {
+      background: #fff9e6;
+      border: 2px solid #d4af37;
+    }
+
+    .day-number {
+      font-weight: 600;
+      margin-bottom: 4px;
+      color: #3f3a34;
+    }
+
+    .day-events {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      max-height: 70px;
+      overflow-y: auto;
+      overflow-x: hidden; /* Prevent horizontal scrolling */
+    }
+
+    .event-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-right: 4px;
+      flex-shrink: 0; /* Prevent dot from shrinking */
+    }
+
+    .event-dot.meeting {
+      background: #3b82f6;
+    }
+
+    .event-dot.wedding {
+      background: #d4af37;
+    }
+
+    .event-dot.deadline {
+      background: #ef4444;
+    }
+
+    .event-dot.reminder {
+      background: #f59e0b;
+    }
+
+    .event-dot.internal {
+      background: #6b7280;
+    }
+
+    .event-item {
+      font-size: 0.75rem;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: #f8f5ec;
+      color: #3f3a34;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      cursor: pointer;
+      max-width: 100%; /* Prevent event items from exceeding cell width */
+      box-sizing: border-box;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .event-item:hover {
+      background: #ece6cd;
+    }
+
+    .event-title {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .status-badge {
+      display: inline-block;
+      min-width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      font-size: 0.6rem;
+      font-weight: 700;
+      text-align: center;
+      line-height: 14px;
+      flex-shrink: 0;
+    }
+
+    /* Project Status Badges */
+    .status-badge.project-status.planning {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .status-badge.project-status.confirmed {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+
+    .status-badge.project-status.in-progress {
+      background: #f4d03f;
+      color: #78350f;
+    }
+
+    .status-badge.project-status.completed {
+      background: #d1fae5;
+      color: #065f46;
+    }
+
+    .status-badge.project-status.cancelled {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    /* Task Status Badges */
+    .status-badge.task-status.pending {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .status-badge.task-status.in-progress {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+
+    .status-badge.task-status.completed {
+      background: #d1fae5;
+      color: #065f46;
+    }
+
+    .upcoming-events {
+      margin-top: 24px;
+      padding: 20px;
+      background: #f8f5ec;
+      border-radius: 12px;
+      border: 1px solid #ece6cd;
+    }
+
+    .upcoming-events h3 {
+      margin: 0 0 16px 0;
+      color: #3f3a34;
+      font-size: 1.2rem;
+    }
+
+    .upcoming-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .upcoming-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 12px;
+      background: #fff;
+      border-radius: 8px;
+      border: 1px solid #ece6cd;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .upcoming-item:hover {
+      box-shadow: 0 4px 12px rgba(38, 31, 15, 0.1);
+      transform: translateY(-2px);
+    }
+
+    .upcoming-date {
+      min-width: 80px;
+      text-align: center;
+      padding: 8px;
+      background: #d4af37;
+      color: #fff;
+      border-radius: 8px;
+      font-weight: 600;
+    }
+
+    .upcoming-content {
+      flex: 1;
+    }
+
+    .upcoming-title {
+      font-weight: 600;
+      color: #3f3a34;
+      margin-bottom: 4px;
+    }
+
+    .upcoming-meta {
+      font-size: 0.85rem;
+      color: #6f6554;
+    }
+
+    .add-event-btn {
+      padding: 10px 20px;
+      background: #d4af37;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.95rem;
+      transition: all 0.2s;
+    }
+
+    .add-event-btn:hover {
+      background: #c19b26;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
+    }
+
+    .loading-indicator {
+      text-align: center;
+      padding: 40px;
+      color: #6f6554;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px;
+      color: #6f6554;
+    }
+
+    .event-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .event-modal.show {
+      display: flex;
+    }
+
+    .event-modal-content {
+      background: #fff;
+      border-radius: 12px;
+      padding: 24px;
+      max-width: 500px;
+      width: 90%;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .event-modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .event-modal-header h3 {
+      margin: 0;
+      color: #3f3a34;
+    }
+
+    .close-btn {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: #6f6554;
+      padding: 0;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .event-form {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .form-group label {
+      font-size: 0.85rem;
+      color: #6f6554;
+      font-weight: 600;
+    }
+
+    .form-input,
+    .form-select,
+    .form-textarea {
+      padding: 10px 12px;
+      border: 1px solid #d9d3b8;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      color: #3f3a34;
+    }
+
+    .form-textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    .form-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+    }
+
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.95rem;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: #d4af37;
+      color: #fff;
+    }
+
+    .btn-primary:hover {
+      background: #c19b26;
+    }
+
+    .btn-secondary {
+      background: #ece6cd;
+      color: #3f3a34;
+    }
+
+    .btn-secondary:hover {
+      background: #d9d3b8;
+    }
+
+    .message {
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      display: none;
+    }
+
+    .message.show {
+      display: block;
+    }
+
+    .message.success {
+      background: #d1fae5;
+      color: #065f46;
+      border: 1px solid #6ee7b7;
+    }
+
+    .message.error {
+      background: #fee2e2;
+      color: #991b1b;
+      border: 1px solid #fca5a5;
+    }
+
+    .message.info {
+      background: #dbeafe;
+      color: #1e40af;
+      border: 1px solid #93c5fd;
+    }
+
+    @media (max-width: 768px) {
+      .calendar-header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .calendar-controls {
+        width: 100%;
+        justify-content: space-between;
+      }
+
+      .calendar-month-view td {
+        height: 60px;
+        font-size: 0.8rem;
+      }
+
+      .day-events {
+        max-height: 40px;
+      }
+    }
+  </style>
 </head>
 <body>
   <header>
@@ -23,9 +573,10 @@
         <!-- Planner-only links -->
         <a href="my_account.html" class="nav-link planner-only-link" style="display:none;">My Account</a>
         
-        <!-- Users section links -->
+        <!-- Admin-only links -->
         <a href="profile.html" class="nav-link admin-only-link" style="display:none;">Profile</a>
         <a href="admin_dashboard.html" class="nav-link admin-only-link" style="display:none;">Users</a>
+        <a href="admin_data_management.html" class="nav-link admin-only-link" style="display:none;">Data Management</a>
         
         <!-- Logout link (shown when logged in) -->
         <a href="#" id="logoutLink" class="nav-link logout-link" style="display:none;">Logout</a>
@@ -34,25 +585,72 @@
     </div>
   </header>
   
-  <main class="main-content">
-    <h2>Event Calendar</h2>
-    <form id="eventForm">
-      <input type="date" id="eventDate" required />
-      <input type="text" id="eventTitle" placeholder="Event Title" required />
-      <select id="eventType" style="margin-left: 10px;">
-        <option value="normal">Normal</option>
-        <option value="milestone">Milestone</option>
-        <option value="reminder">Reminder</option>
+  <main class="main-content calendar-page">
+    <div class="calendar-header">
+      <h1>Event Calendar</h1>
+      <div class="calendar-controls">
+        <div class="view-toggle">
+          <button class="active" data-view="month">Month</button>
+          <button data-view="week">Week</button>
+          <button data-view="day">Day</button>
+          <button data-view="list">List</button>
+        </div>
+        <div class="nav-buttons">
+          <button class="nav-btn" id="prevBtn">‹</button>
+          <button class="nav-btn" id="todayBtn">Today</button>
+          <button class="nav-btn" id="nextBtn">›</button>
+        </div>
+        <button class="add-event-btn" id="addEventBtn">+ New Event</button>
+      </div>
+    </div>
+
+    <div class="message" id="calendarMessage"></div>
+
+    <div class="calendar-filters">
+      <div class="filter-group">
+        <label>Project</label>
+        <select id="projectFilter" class="filter-select">
+          <option value="">All Projects</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Event Type</label>
+        <select id="typeFilter" class="filter-select">
+          <option value="">All Types</option>
+          <option value="meeting">Meetings</option>
+          <option value="wedding">Weddings</option>
+          <option value="deadline">Deadlines</option>
+          <option value="reminder">Reminders</option>
+          <option value="internal">Internal</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Time Range</label>
+        <select id="rangeFilter" class="filter-select">
+          <option value="month">This Month</option>
+          <option value="week">This Week</option>
+          <option value="all">All Time</option>
       </select>
-      <button type="submit">Add Event</button>
-    </form>
-    <div id="calendarContainer"></div>
+      </div>
+    </div>
+
+    <div class="calendar-container">
+      <div id="calendarView"></div>
+    </div>
+
+    <div class="upcoming-events">
+      <h3>Upcoming Events</h3>
+      <div id="upcomingList" class="upcoming-list">
+        <div class="loading-indicator">Loading upcoming events...</div>
+      </div>
+    </div>
   </main>
   
   <footer>&copy; 2025 Wedding Planning System</footer>
   
   <!-- Modal Background -->
   <div class="modal-bg" id="modalBG"></div>
+  
   <!-- Login Modal -->
   <div class="modal" id="loginModal">
     <span class="close-x" onclick="closeModal()">&times;</span>
@@ -63,6 +661,60 @@
       <button type="submit" class="login-btn" style="width:100%; margin-bottom:15px;">Login</button>
       <div id="loginMsg" style="color:red; font-size:0.98em; margin-bottom:9px;"></div>
     </form>
+  </div>
+
+  <!-- Event Modal -->
+  <div class="event-modal" id="eventModal">
+    <div class="event-modal-content">
+      <div class="event-modal-header">
+        <h3 id="eventModalTitle">Add Event</h3>
+        <button class="close-btn" id="closeEventModal">&times;</button>
+      </div>
+      <form id="eventForm" class="event-form">
+        <input type="hidden" id="eventId">
+        <div class="form-group">
+          <label>Title *</label>
+          <input type="text" id="eventTitle" class="form-input" placeholder="Event title" required>
+        </div>
+        <div class="form-group">
+          <label>Project</label>
+          <select id="eventProject" class="form-select">
+            <option value="">No Project (Internal Event)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Event Type *</label>
+          <select id="eventType" class="form-select" required>
+            <option value="meeting">Meeting</option>
+            <option value="wedding">Wedding</option>
+            <option value="deadline">Deadline</option>
+            <option value="reminder">Reminder</option>
+            <option value="internal">Internal</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Start Date & Time *</label>
+          <input type="datetime-local" id="eventStart" class="form-input" required>
+        </div>
+        <div class="form-group">
+          <label>End Date & Time *</label>
+          <input type="datetime-local" id="eventEnd" class="form-input" required>
+        </div>
+        <div class="form-group">
+          <label>Location</label>
+          <input type="text" id="eventLocation" class="form-input" placeholder="Event location">
+        </div>
+        <div class="form-group">
+          <label>Description</label>
+          <textarea id="eventDescription" class="form-textarea" placeholder="Event description"></textarea>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn btn-secondary" id="cancelEventBtn">Cancel</button>
+          <button type="button" class="btn btn-secondary" id="deleteEventBtn" style="display:none;">Delete</button>
+          <button type="submit" class="btn btn-primary">Save Event</button>
+        </div>
+      </form>
+    </div>
   </div>
   
   <!-- Load JavaScript files -->

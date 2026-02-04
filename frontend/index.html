@@ -23,19 +23,28 @@
         <!-- Planner-only links -->
         <a href="my_account.html" class="nav-link planner-only-link" style="display:none;">My Account</a>
         
-        <!-- Users section links -->
+        <!-- Admin-only links -->
         <a href="profile.html" class="nav-link admin-only-link" style="display:none;">Profile</a>
         <a href="admin_dashboard.html" class="nav-link admin-only-link" style="display:none;">Users</a>
+        <a href="admin_data_management.html" class="nav-link admin-only-link" style="display:none;">Data Management</a>
         
         <!-- Logout link (shown when logged in) -->
         <a href="#" id="logoutLink" class="nav-link logout-link" style="display:none;">Logout</a>
       </nav>
+      <div style="margin-left: auto;">
       <button class="login-btn" id="openLogin">Sign In / Log In</button>
+      </div>
     </div>
   </header>
   
   <!-- Content for NON-LOGGED IN users -->
   <main class="main-content" id="publicContent">
+    <!-- Back button (shown when coming from Get Started) -->
+    <div id="backButtonContainer" style="display:none; padding: 20px; margin-bottom: -20px;">
+      <button id="backToThemeBtn" style="background: #f5f5f5; color: #333; border: 1px solid #ddd; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px;">
+        ← Back to Theme Suggestions
+      </button>
+    </div>
     <div style="text-align: center; padding: 40px 20px;">
       <h1>Welcome to Wedding Planning System</h1>
       <p style="font-size: 1.2em; margin: 20px 0; color: #666;">
@@ -74,11 +83,50 @@
   
   <!-- Content for LOGGED IN users -->
   <main class="main-content" id="loggedInContent" style="display:none;">
+    <!-- Back button (shown when coming from Get Started) -->
+    <div id="backButtonContainerLoggedIn" style="display:none; padding: 20px; margin-bottom: -20px;">
+      <button id="backToThemeBtnLoggedIn" style="background: #f5f5f5; color: #333; border: 1px solid #ddd; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px;">
+        ← Back to Theme Suggestions
+      </button>
+    </div>
     <div style="text-align: center; padding: 40px 20px;">
       <h1>Welcome Back, <span id="userNameDisplay"></span>!</h1>
       <p style="font-size: 1.2em; margin: 20px 0; color: #666;">
         Ready to continue planning amazing weddings?
       </p>
+    </div>
+    
+    <!-- Company Details Section -->
+    <div id="companySection" style="max-width: 900px; margin: 0 auto 40px auto; padding: 0 20px; display: none;">
+      <div style="background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%); border: 1px solid #e0e0e0; border-radius: 12px; padding: 30px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+        <div style="text-align: center; margin-bottom: 25px;">
+          <h2 id="companyName" style="color: #d4af37; margin: 0 0 10px 0; font-size: 1.8em;"></h2>
+          <p id="companyDescription" style="color: #666; font-size: 1em; margin: 0; font-style: italic;"></p>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-top: 25px; padding-top: 25px; border-top: 1px solid #e0e0e0;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="font-size: 1.5em;">📧</div>
+            <div>
+              <div style="font-weight: bold; color: #333; margin-bottom: 4px;">Email</div>
+              <a id="companyEmail" href="#" style="color: #d4af37; text-decoration: none;"></a>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="font-size: 1.5em;">📞</div>
+            <div>
+              <div style="font-weight: bold; color: #333; margin-bottom: 4px;">Phone</div>
+              <a id="companyPhone" href="#" style="color: #d4af37; text-decoration: none;"></a>
+            </div>
+          </div>
+          <div style="display: flex; align-items: flex-start; gap: 12px;">
+            <div style="font-size: 1.5em;">📍</div>
+            <div>
+              <div style="font-weight: bold; color: #333; margin-bottom: 4px;">Address</div>
+              <div id="companyAddress" style="color: #666;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
     
     <div style="max-width: 1000px; margin: 40px auto; padding: 0 20px;">
@@ -146,29 +194,60 @@
       <button type="submit" class="login-btn" style="width:100%; margin-bottom:15px;">Login</button>
       <div id="loginMsg" style="color:red; font-size:0.98em; margin-bottom:9px;"></div>
     </form>
-    <p style="text-align: center; margin-top: 15px;">
-      Don't have an account? <a href="registration.html">Sign up here</a>
+    <p style="text-align: center; margin-top: 10px;">
+      <a href="#" id="forgotPasswordLink" style="color: #d4af37; text-decoration: none; font-size: 0.9em;">Forgot Password?</a>
+    </p>
+  </div>
+  
+  <!-- Forgot Password Modal -->
+  <div class="modal" id="forgotPasswordModal" style="display:none;">
+    <span class="close-x" onclick="closeForgotPasswordModal()">&times;</span>
+    <h3 style="margin-top:2px;">Reset Password</h3>
+    <p style="font-size: 0.9em; color: #666; margin-bottom: 15px;">
+      Enter your email address and we'll send you a link to reset your password.
+    </p>
+    <form id="forgotPasswordForm">
+      <input id="forgotPasswordEmail" type="email" placeholder="Email" required>
+      <button type="submit" class="login-btn" style="width:100%; margin-bottom:15px;">Send Reset Link</button>
+      <div id="forgotPasswordMsg" style="color:red; font-size:0.98em; margin-bottom:9px;"></div>
+      <div id="forgotPasswordSuccess" style="color:green; font-size:0.98em; margin-bottom:9px; display:none;"></div>
+    </form>
+    <p style="text-align: center; margin-top: 10px;">
+      <a href="#" id="backToLoginLink" style="color: #d4af37; text-decoration: none; font-size: 0.9em;">Back to Login</a>
     </p>
   </div>
   
   <script src="assets/js/login_modal.js"></script>
   <script src="assets/js/shared_navigation.js"></script>
   <script>
-    // Handle Get Started button
-    document.getElementById('getStartedBtn').addEventListener('click', function() {
-      document.getElementById('openLogin').click();
-    });
-
     // Check authentication and show appropriate content
     document.addEventListener('DOMContentLoaded', function() {
       const isLoggedIn = localStorage.getItem('isLoggedIn');
       const userName = localStorage.getItem('userName');
       const userRole = localStorage.getItem('userRole');
       
+      // Check if coming from "Get Started" button
+      const urlParams = new URLSearchParams(window.location.search);
+      const fromGetStarted = urlParams.get('from') === 'getstarted';
+      
       if (isLoggedIn === 'true') {
-        // Show logged-in content
+        // User is logged in - show logged-in content
         document.getElementById('publicContent').style.display = 'none';
         document.getElementById('loggedInContent').style.display = 'block';
+        
+        // Show back button for logged-in users when coming from Get Started
+        const backButtonContainerLoggedIn = document.getElementById('backButtonContainerLoggedIn');
+        if (backButtonContainerLoggedIn && fromGetStarted) {
+          backButtonContainerLoggedIn.style.display = 'block';
+        }
+        
+        // Handle back button click for logged-in users
+        const backToThemeBtnLoggedIn = document.getElementById('backToThemeBtnLoggedIn');
+        if (backToThemeBtnLoggedIn) {
+          backToThemeBtnLoggedIn.addEventListener('click', function() {
+            window.location.href = 'theme_suggestions.html';
+          });
+        }
         
         // Update user name
         const userNameDisplay = document.getElementById('userNameDisplay');
@@ -176,7 +255,7 @@
           userNameDisplay.textContent = userName || 'User';
         }
         
-        // Initialize navigation
+        // Initialize navigation for logged-in users
         sharedNavigation.handlePageNavigation(userRole, isLoggedIn);
         
         // Mark Home as active
@@ -184,12 +263,131 @@
         if (homeLink) {
           homeLink.classList.add('active');
         }
+        
+        // Load company details
+        loadCompanyDetails();
       } else {
-        // Show public content
+        // Public user
+        if (!fromGetStarted) {
+          // Public user landing on index.html directly - redirect to theme suggestions
+          window.location.href = 'theme_suggestions.html';
+          return;
+        }
+        
+        // Public user coming from "Get Started" button - show landing page
         document.getElementById('publicContent').style.display = 'block';
         document.getElementById('loggedInContent').style.display = 'none';
+        
+        // Show back button when coming from Get Started
+        const backButtonContainer = document.getElementById('backButtonContainer');
+        if (backButtonContainer && fromGetStarted) {
+          backButtonContainer.style.display = 'block';
+        }
+        
+        // Handle back button click
+        const backToThemeBtn = document.getElementById('backToThemeBtn');
+        if (backToThemeBtn) {
+          backToThemeBtn.addEventListener('click', function() {
+            window.location.href = 'theme_suggestions.html';
+          });
+        }
+        
+        // Hide navigation bar for public users
+        const mainNav = document.getElementById('mainNav');
+        if (mainNav) {
+          mainNav.style.display = 'none';
+        }
+        
+        // Handle Get Started button for public users
+        const getStartedBtn = document.getElementById('getStartedBtn');
+        if (getStartedBtn) {
+          getStartedBtn.addEventListener('click', function() {
+            document.getElementById('openLogin').click();
+          });
+        }
       }
     });
+    
+    // Function to load company details
+    async function loadCompanyDetails() {
+      try {
+        const response = await fetch('http://localhost:5000/api/admin/company', {
+          method: 'GET',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        const companySection = document.getElementById('companySection');
+        
+        if (data.company && companySection) {
+          const company = data.company;
+          
+          // Show company section if company name exists
+          if (company.name) {
+            companySection.style.display = 'block';
+            
+            // Populate company details
+            document.getElementById('companyName').textContent = company.name || '';
+            document.getElementById('companyDescription').textContent = company.description || '';
+            
+            // Email
+            const companyEmail = document.getElementById('companyEmail');
+            if (company.email) {
+              companyEmail.textContent = company.email;
+              companyEmail.href = `mailto:${company.email}`;
+            } else {
+              companyEmail.textContent = 'Not provided';
+              companyEmail.href = '#';
+              companyEmail.style.pointerEvents = 'none';
+              companyEmail.style.color = '#999';
+            }
+            
+            // Phone
+            const companyPhone = document.getElementById('companyPhone');
+            if (company.phone) {
+              companyPhone.textContent = company.phone;
+              companyPhone.href = `tel:${company.phone}`;
+            } else {
+              companyPhone.textContent = 'Not provided';
+              companyPhone.href = '#';
+              companyPhone.style.pointerEvents = 'none';
+              companyPhone.style.color = '#999';
+            }
+            
+            // Address
+            const companyAddress = document.getElementById('companyAddress');
+            if (company.address) {
+              companyAddress.textContent = company.address;
+            } else {
+              companyAddress.textContent = 'Not provided';
+              companyAddress.style.color = '#999';
+            }
+          } else {
+            // Hide company section if no company name
+            companySection.style.display = 'none';
+          }
+        } else {
+          // Hide company section if no company data
+          if (companySection) {
+            companySection.style.display = 'none';
+          }
+        }
+      } catch (error) {
+        console.error('Error loading company details:', error);
+        // Hide company section on error
+        const companySection = document.getElementById('companySection');
+        if (companySection) {
+          companySection.style.display = 'none';
+        }
+      }
+    }
   </script>
 </body>
 </html>

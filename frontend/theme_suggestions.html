@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <title>Theme Suggestions - Wedding Planning System</title>
   <link rel="stylesheet" href="assets/css/styles.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
   <header>
@@ -23,59 +24,134 @@
         <!-- Planner-only links -->
         <a href="my_account.html" class="nav-link planner-only-link" style="display:none;">My Account</a>
         
-        <!-- Users section links -->
+        <!-- Admin-only links -->
         <a href="profile.html" class="nav-link admin-only-link" style="display:none;">Profile</a>
         <a href="admin_dashboard.html" class="nav-link admin-only-link" style="display:none;">Users</a>
+        <a href="admin_data_management.html" class="nav-link admin-only-link" style="display:none;">Data Management</a>
         
         <!-- Logout link (shown when logged in) -->
         <a href="#" id="logoutLink" class="nav-link logout-link" style="display:none;">Logout</a>
       </nav>
-      <button class="login-btn" id="openLogin">Sign In / Log In</button>
+      <div style="margin-left: auto;">
+        <!-- Get Started button for public users (shown when not logged in) -->
+        <button class="login-btn" id="getStartedBtn" style="display:none;">Get Started</button>
+        <!-- Sign In button for logged-in users -->
+        <button class="login-btn" id="openLogin" style="display:none;">Sign In / Log In</button>
+      </div>
     </div>
   </header>
   
   <main class="main-content">
-    <h2>Get Theme Suggestions</h2>
+    <!-- Clear Header Section -->
+    <div class="theme-header-section">
+      <h1 class="theme-main-title">🎨 Wedding Theme Suggestions</h1>
+      <p class="theme-subtitle">Get personalized wedding theme recommendations based on your wedding type and color preferences</p>
+    </div>
+    
+    <!-- Welcome message for public users -->
+    <div id="publicWelcome" class="public-welcome-card" style="display:none;">
+      <h3>✨ Free Theme Suggestion Tool</h3>
+      <p style="font-size: 1.1em; line-height: 1.8; margin-bottom: 15px;">Explore personalized wedding theme recommendations based on your preferences.</p>
+      <p class="welcome-note" style="font-size: 1em; padding: 12px 20px; background: #fff9e6; border-radius: 8px; display: inline-block; margin-top: 10px;">No account needed. Simply select your wedding type and color below.</p>
+    </div>
+    
+    <!-- Elegant Form Container -->
+    <div class="theme-form-container">
     <form id="themeForm" class="theme-form">
+        <div class="form-section">
+          <div class="form-section-header">
+            <h3 class="section-title">Step 1: Wedding Details 💍</h3>
+            <p class="section-description">Select your wedding type to get started</p>
+          </div>
+          
       <div class="form-row">
-        <div class="form-group">
-          <label for="projectSelect">Select Project (Optional):</label>
-          <select id="projectSelect">
-            <option value="">Select a project (optional)</option>
+            <div class="form-group" id="projectGroup" style="display:none;">
+              <label for="projectSelect" class="form-label">
+                📋 Project (Optional)
+              </label>
+              <select id="projectSelect" class="styled-select">
+                <option value="">-- Select a project (optional) --</option>
           </select>
+              <small class="field-hint">Associate these suggestions with a specific project</small>
         </div>
+            
         <div class="form-group">
-          <label for="weddingType">Wedding Type:</label>
-          <select id="weddingType" required>
-            <option value="">Loading wedding types...</option>
+              <label for="weddingType" class="form-label">
+                🏛️ Wedding Type <span class="required-star">*</span>
+              </label>
+              <div class="select-wrapper">
+                <select id="weddingType" class="styled-select" required>
+                  <option value="">-- Please select a wedding type --</option>
           </select>
+                <span class="select-arrow">▼</span>
+              </div>
+              <small class="field-hint">Choose the type of wedding ceremony you're planning</small>
           <div id="weddingTypeInfo" class="info-text" style="display: none;"></div>
         </div>
       </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label for="brideColor">Bride's Dress Color:</label>
-          <div class="color-input-container">
-            <input type="color" id="brideColor" value="#e5c100" />
-            <input type="text" id="brideColorText" placeholder="Or enter color name" />
-            <div id="colorPreview" class="color-preview"></div>
+        </div>
+        
+        <div class="form-section">
+          <div class="form-section-header">
+            <h3 class="section-title">Step 2: Color Selection 🎨</h3>
+            <p class="section-description">Choose the bride's dress color - this will help us suggest perfect matching theme colors</p>
           </div>
+          
+          <div class="form-group full-width">
+            <label for="brideColor" class="form-label">
+              👗 Bride's Dress Color <span class="required-star">*</span>
+            </label>
+            
+            <div class="color-input-container">
+              <div class="color-picker-wrapper">
+                <label class="color-picker-label">
+                  <input type="color" id="brideColor" value="#e5c100" />
+                  <span class="color-picker-button">
+                    <span class="color-indicator" id="colorPreview"></span>
+                    <span class="color-picker-text">Click to Pick Color</span>
+                  </span>
+                </label>
+              </div>
+              <div class="color-divider">or</div>
+              <div class="color-text-wrapper">
+                <input type="text" id="brideColorText" class="styled-input" placeholder="Type color name (e.g., gold, red, blue, purple)" />
+              </div>
+            </div>
+            
+            <small class="field-hint">💡 Tip: The color you choose will be used to suggest complementary colors for the entire wedding theme</small>
           <div id="colorInfo" class="info-text" style="display: none;"></div>
         </div>
       </div>
+        
       <div class="form-buttons">
-        <button type="submit">Get Suggestions</button>
-        <button type="button" id="saveSuggestionsBtn">Save Suggestions</button>
+          <button type="submit" class="btn-primary">
+            ✨ Get Theme Suggestions
+          </button>
+          <button type="button" id="saveSuggestionsBtn" class="btn-secondary" style="display:none;">
+            💾 Save Suggestions to Project
+          </button>
+        </div>
+        <p class="form-note">Click "Get Theme Suggestions" to generate your personalized wedding theme recommendations</p>
+      </form>
+    </div>
+    <!-- Elegant Loading indicator -->
+    <div id="loadingIndicator" class="stylish-loading" style="display: none;">
+      <div class="loading-content">
+        <div class="loading-spinner">
+          <div class="spinner-ring"></div>
+          <div class="spinner-ring"></div>
+          <div class="spinner-ring"></div>
+        </div>
+        <h3 class="loading-title">Creating Your Perfect Theme</h3>
+        <p class="loading-text">Analyzing colors and cultural preferences...</p>
+        <div class="loading-progress">
+          <div class="progress-bar"></div>
+        </div>
       </div>
-    </form>
-    <!-- Loading indicator -->
-    <div id="loadingIndicator" class="loading-indicator" style="display: none;">
-      <div class="spinner"></div>
-      <p>Generating personalized suggestions...</p>
     </div>
     
-    <!-- Results container -->
-    <div id="suggestionsResult"></div>
+    <!-- Results container with enhanced styling -->
+    <div id="suggestionsResult" class="suggestions-results-container"></div>
     <div id="menuSuggestions" style="margin-top: 20px;"></div>
     <div id="venueSuggestions" style="margin-top: 20px;"></div>
     
@@ -83,9 +159,9 @@
     <div id="suggestionManagement" class="suggestion-management" style="display: none;">
       <h3>📋 Suggestion Management</h3>
       <div class="management-buttons">
-        <button id="compareSuggestionsBtn">Compare with Previous</button>
-        <button id="exportSuggestionsBtn">Export Suggestions</button>
-        <button id="shareSuggestionsBtn">Share Suggestions</button>
+        <button id="compareSuggestionsBtn">🔍 Compare Suggestions</button>
+        <button id="exportSuggestionsBtn">📥 Export Suggestions</button>
+        <button id="shareSuggestionsBtn">📤 Share Suggestions</button>
       </div>
     </div>
   </main>
@@ -104,6 +180,79 @@
       <button type="submit" class="login-btn" style="width:100%; margin-bottom:15px;">Login</button>
       <div id="loginMsg" style="color:red; font-size:0.98em; margin-bottom:9px;"></div>
     </form>
+    <p style="text-align: center; margin-top: 10px;">
+      <a href="#" id="forgotPasswordLink" style="color: #d4af37; text-decoration: none; font-size: 0.9em;">Forgot Password?</a>
+    </p>
+  </div>
+  
+  <!-- Forgot Password Modal -->
+  <div class="modal" id="forgotPasswordModal" style="display:none;">
+    <span class="close-x" onclick="closeForgotPasswordModal()">&times;</span>
+    <h3 style="margin-top:2px;">Reset Password</h3>
+    <p style="font-size: 0.9em; color: #666; margin-bottom: 15px;">
+      Enter your email address and we'll send you a link to reset your password.
+    </p>
+    <form id="forgotPasswordForm">
+      <input id="forgotPasswordEmail" type="email" placeholder="Email" required>
+      <button type="submit" class="login-btn" style="width:100%; margin-bottom:15px;">Send Reset Link</button>
+      <div id="forgotPasswordMsg" style="color:red; font-size:0.98em; margin-bottom:9px;"></div>
+      <div id="forgotPasswordSuccess" style="color:green; font-size:0.98em; margin-bottom:9px; display:none;"></div>
+    </form>
+    <p style="text-align: center; margin-top: 10px;">
+      <a href="#" id="backToLoginLink" style="color: #d4af37; text-decoration: none; font-size: 0.9em;">Back to Login</a>
+    </p>
+  </div>
+  
+  <!-- Comparison Modal -->
+  <div class="modal-bg" id="comparisonModalBG" style="display:none;"></div>
+  <div class="modal comparison-modal" id="comparisonModal" style="display:none;">
+    <span class="close-x" id="closeComparisonModal">&times;</span>
+    <h3 style="margin-top:2px; margin-bottom:20px;">🔍 Compare Suggestions</h3>
+    
+    <div class="comparison-selector">
+      <div class="comparison-select-group">
+        <label for="suggestion1Select">First Suggestion:</label>
+        <select id="suggestion1Select" class="styled-select"></select>
+      </div>
+      <div class="comparison-select-group">
+        <label for="suggestion2Select">Second Suggestion:</label>
+        <select id="suggestion2Select" class="styled-select"></select>
+      </div>
+      <button id="compareSelectedBtn" class="btn-primary" style="margin-top:10px;">Compare</button>
+    </div>
+    
+    <div id="comparisonContent" style="display:none; margin-top:30px; max-height:70vh; overflow-y:auto;">
+      <!-- Comparison Legend/Help -->
+      <div class="comparison-legend" style="background: #f0f9ff; border: 2px solid #0ea5e9; border-radius: 8px; padding: 12px 16px; margin-bottom: 20px;">
+        <div style="display: flex; align-items: flex-start; gap: 10px;">
+          <span style="font-size: 18px;">💡</span>
+          <div style="flex: 1;">
+            <strong style="display: block; margin-bottom: 6px; color: #0369a1; font-size: 0.95rem;">How to Read This Comparison</strong>
+            <p style="margin: 0; color: #0c4a6e; font-size: 0.85rem; line-height: 1.5;">
+              The <span style="background: #fff9e6; padding: 2px 6px; border-radius: 4px; font-weight: 600;">⚠ Different</span> indicator shows items that differ between the two suggestions. 
+              Items without this indicator are the same in both suggestions.
+            </p>
+          </div>
+        </div>
+      </div>
+      
+      <div class="comparison-side-by-side">
+        <div class="comparison-column">
+          <div class="comparison-header">
+            <h4 id="suggestion1Title"></h4>
+            <div class="comparison-meta" id="suggestion1Meta"></div>
+          </div>
+          <div id="suggestion1Content"></div>
+        </div>
+        <div class="comparison-column">
+          <div class="comparison-header">
+            <h4 id="suggestion2Title"></h4>
+            <div class="comparison-meta" id="suggestion2Meta"></div>
+          </div>
+          <div id="suggestion2Content"></div>
+        </div>
+      </div>
+    </div>
   </div>
   
   <!-- Load JavaScript files -->
@@ -111,8 +260,57 @@
   <script src="assets/js/shared_navigation.js"></script>
   <script src="assets/js/theme_suggestions.js"></script>
   <script>
+    // Check authentication status and show appropriate UI
+    document.addEventListener('DOMContentLoaded', function() {
+      const isLoggedIn = localStorage.getItem('isLoggedIn');
+      const userRole = localStorage.getItem('userRole');
+      const getStartedBtn = document.getElementById('getStartedBtn');
+      const openLoginBtn = document.getElementById('openLogin');
+      const publicWelcome = document.getElementById('publicWelcome');
+      const projectGroup = document.getElementById('projectGroup');
+      const mainNav = document.getElementById('mainNav');
+      
+      if (isLoggedIn === 'true') {
+        // User is logged in - show normal navigation and all features
+        getStartedBtn.style.display = 'none';
+        openLoginBtn.style.display = 'none';
+        publicWelcome.style.display = 'none';
+        
+        // Hide project dropdown for coordinators
+        if (userRole === 'coordinator') {
+          projectGroup.style.display = 'none';
+        } else {
+          projectGroup.style.display = 'block';
+        }
+        
+        // Show navigation bar for logged-in users
+        if (mainNav) {
+          mainNav.style.display = 'block';
+        }
+        
     // Initialize navigation using shared navigation system
-    sharedNavigation.initializePageNavigation();
+        // Use handlePageNavigation directly (not initializePageNavigation which redirects)
+        if (sharedNavigation && sharedNavigation.handlePageNavigation) {
+          sharedNavigation.handlePageNavigation(userRole, isLoggedIn);
+        }
+      } else {
+        // Public user - show Get Started button and hide project selection
+        getStartedBtn.style.display = 'block';
+        openLoginBtn.style.display = 'none';
+        publicWelcome.style.display = 'block';
+        projectGroup.style.display = 'none';
+        
+        // Hide navigation bar for public users only
+        if (mainNav) {
+          mainNav.style.display = 'none';
+        }
+        
+        // Handle Get Started button click - redirect to index.html with parameter
+        getStartedBtn.addEventListener('click', function() {
+          window.location.href = 'index.html?from=getstarted';
+        });
+      }
+    });
   </script>
 </body>
 </html>

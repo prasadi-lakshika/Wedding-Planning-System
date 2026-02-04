@@ -16,6 +16,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const saveBtn = document.getElementById('saveSuggestionsBtn');
   const loadingIndicator = document.getElementById('loadingIndicator');
   const suggestionManagement = document.getElementById('suggestionManagement');
+  const comparisonModal = document.getElementById('comparisonModal');
+  const comparisonModalBG = document.getElementById('comparisonModalBG');
+  const closeComparisonModal = document.getElementById('closeComparisonModal');
+  const suggestion1Select = document.getElementById('suggestion1Select');
+  const suggestion2Select = document.getElementById('suggestion2Select');
+  const compareSelectedBtn = document.getElementById('compareSelectedBtn');
+  const comparisonContent = document.getElementById('comparisonContent');
 
   // State management
   let projects = [];
@@ -35,6 +42,11 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('localStorage.userRole:', localStorage.getItem('userRole'));
     
     try {
+      const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+      
+      // Only load projects if user is authenticated and not a coordinator
+      const userRole = localStorage.getItem('userRole');
+      if (isLoggedIn && userRole !== 'coordinator') {
       // Load projects from database (original simple approach)
       console.log('Step 1: Loading projects from database...');
       await loadProjectsFromDatabase();
@@ -44,16 +56,8 @@ document.addEventListener('DOMContentLoaded', () => {
         console.warn('No projects available after loading');
       }
       
-      // Load wedding types from API
-      console.log('Step 2: Loading wedding types...');
-      await loadWeddingTypes();
-      
-      // Set up event listeners
-      console.log('Step 3: Setting up event listeners...');
-      setupEventListeners();
-      
       // Load selected project if any
-      console.log('Step 4: Checking for saved project selection...');
+        console.log('Step 2: Checking for saved project selection...');
       const savedProjectId = localStorage.getItem('selectedProjectId');
       if (savedProjectId && projects.length > 0) {
         console.log('Found saved project ID:', savedProjectId);
@@ -76,6 +80,33 @@ document.addEventListener('DOMContentLoaded', () => {
       } else {
         console.log('No saved project or no projects available');
       }
+      } else {
+        if (isLoggedIn && userRole === 'coordinator') {
+          console.log('Coordinator user - skipping project loading and project selection');
+        } else {
+          console.log('Public user - skipping project loading');
+        }
+        // Hide project select for public users and coordinators (handled in HTML)
+      }
+      
+      // Load wedding types from API (works for both authenticated and public users)
+      console.log('Step 3: Loading wedding types...');
+      await loadWeddingTypes();
+      
+      // Show/hide save button based on authentication status and role
+      if (saveBtn) {
+        const userRole = localStorage.getItem('userRole');
+        // Show for authenticated users except coordinators
+        if (isLoggedIn && userRole !== 'coordinator') {
+          saveBtn.style.display = 'flex'; // Show for authenticated users (matches CSS class)
+        } else {
+          saveBtn.style.display = 'none'; // Hide for public users and coordinators
+        }
+      }
+      
+      // Set up event listeners
+      console.log('Step 4: Setting up event listeners...');
+      setupEventListeners();
       
       console.log('=== PAGE INITIALIZATION COMPLETE ===');
       
@@ -178,10 +209,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const isLoggedIn = localStorage.getItem('isLoggedIn');
     console.log('isLoggedIn value:', isLoggedIn, 'type:', typeof isLoggedIn);
     
-    if (!isLoggedIn) {
-      console.error('User not logged in - localStorage.isLoggedIn is:', isLoggedIn);
-      projectSelect.innerHTML = '<option value="">Please log in first</option>';
-      showError('Please log in to access projects.');
+    if (!isLoggedIn || isLoggedIn !== 'true') {
+      console.log('User not logged in - skipping project loading');
+      projectSelect.innerHTML = '<option value="">No project selected (optional)</option>';
+      // Don't show error for public users - projects are optional
       return;
     }
     
@@ -323,7 +354,7 @@ document.addEventListener('DOMContentLoaded', () => {
       weddingTypes.forEach(wt => {
         const option = document.createElement('option');
         option.value = wt.name;
-        option.textContent = `${wt.name} (${wt.available_colors} colors)`;
+        option.textContent = wt.name; // Removed color count display
         option.dataset.description = wt.description;
         option.dataset.hasRestrictions = wt.has_restrictions;
         weddingTypeSelect.appendChild(option);
@@ -386,6 +417,17 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('compareSuggestionsBtn').addEventListener('click', compareSuggestions);
     document.getElementById('exportSuggestionsBtn').addEventListener('click', exportSuggestions);
     document.getElementById('shareSuggestionsBtn').addEventListener('click', shareSuggestions);
+    
+    // Comparison modal controls
+    if (closeComparisonModal) {
+      closeComparisonModal.addEventListener('click', hideComparisonModal);
+    }
+    if (comparisonModalBG) {
+      comparisonModalBG.addEventListener('click', hideComparisonModal);
+    }
+    if (compareSelectedBtn) {
+      compareSelectedBtn.addEventListener('click', performComparison);
+    }
   }
 
   function showWeddingTypeInfo(option) {
@@ -570,6 +612,15 @@ document.addEventListener('DOMContentLoaded', () => {
       
       // Display enhanced suggestions
       displayEnhancedSuggestions(data);
+      
+      // Show save button for authenticated users after suggestions are generated (except coordinators)
+      const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+      const userRole = localStorage.getItem('userRole');
+      if (isLoggedIn && userRole !== 'coordinator' && saveBtn) {
+        saveBtn.style.display = 'flex'; // Matches CSS class .btn-secondary
+      } else if (saveBtn) {
+        saveBtn.style.display = 'none'; // Hide for coordinators
+      }
       
       // Show management options
       suggestionManagement.style.display = 'block';
@@ -784,6 +835,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
   async function saveSuggestions() {
     try {
+      // Check if user is authenticated
+      const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+      if (!isLoggedIn) {
+        showError('Please log in to save suggestions to a project.');
+        return;
+      }
+      
+      // Coordinators cannot save suggestions
+      const userRole = localStorage.getItem('userRole');
+      if (userRole === 'coordinator') {
+        showError('Coordinators cannot save theme suggestions.');
+        return;
+      }
+      
       const projectValue = projectSelect.value;
       if (!projectValue) {
         showError('Please select a project before saving suggestions.');
@@ -823,12 +888,235 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     
-    // Create comparison modal or page
-    const latest = suggestionHistory[0];
-    const previous = suggestionHistory[1];
+    // Populate suggestion dropdowns
+    populateSuggestionDropdowns();
     
-    // Implementation for comparison view
-    showSuccess('Comparison feature coming soon!');
+    // Show comparison modal
+    showComparisonModal();
+  }
+  
+  function populateSuggestionDropdowns() {
+    if (!suggestion1Select || !suggestion2Select) return;
+    
+    // Clear existing options
+    suggestion1Select.innerHTML = '<option value="">-- Select suggestion --</option>';
+    suggestion2Select.innerHTML = '<option value="">-- Select suggestion --</option>';
+    
+    // Add suggestions to dropdowns
+    suggestionHistory.forEach((suggestion, index) => {
+      const date = new Date(suggestion.timestamp).toLocaleDateString();
+      const time = new Date(suggestion.timestamp).toLocaleTimeString();
+      const label = `${suggestion.weddingType} - ${suggestion.brideColor} (${date} ${time})`;
+      
+      const option1 = document.createElement('option');
+      option1.value = index;
+      option1.textContent = label;
+      suggestion1Select.appendChild(option1);
+      
+      const option2 = document.createElement('option');
+      option2.value = index;
+      option2.textContent = label;
+      suggestion2Select.appendChild(option2);
+    });
+    
+    // Set default selections (latest vs previous)
+    if (suggestionHistory.length >= 1) {
+      suggestion1Select.value = 0; // Latest
+    }
+    if (suggestionHistory.length >= 2) {
+      suggestion2Select.value = 1; // Previous
+    }
+  }
+  
+  function showComparisonModal() {
+    if (comparisonModal && comparisonModalBG) {
+      comparisonModal.style.display = 'block';
+      comparisonModalBG.style.display = 'block';
+      comparisonModalBG.classList.add('show');
+      comparisonModal.classList.add('show');
+    }
+  }
+  
+  function hideComparisonModal() {
+    if (comparisonModal && comparisonModalBG) {
+      comparisonModal.style.display = 'none';
+      comparisonModalBG.style.display = 'none';
+      comparisonModalBG.classList.remove('show');
+      comparisonModal.classList.remove('show');
+      comparisonContent.style.display = 'none';
+    }
+  }
+  
+  function performComparison() {
+    const index1 = parseInt(suggestion1Select.value);
+    const index2 = parseInt(suggestion2Select.value);
+    
+    if (isNaN(index1) || isNaN(index2)) {
+      showError('Please select both suggestions to compare.');
+      return;
+    }
+    
+    if (index1 === index2) {
+      showError('Please select two different suggestions to compare.');
+      return;
+    }
+    
+    const suggestion1 = suggestionHistory[index1];
+    const suggestion2 = suggestionHistory[index2];
+    
+    if (!suggestion1 || !suggestion2) {
+      showError('Selected suggestions not found.');
+      return;
+    }
+    
+    // Display comparison
+    displayComparison(suggestion1, suggestion2, index1, index2);
+  }
+  
+  function displayComparison(suggestion1, suggestion2, index1, index2) {
+    // Show comparison content
+    comparisonContent.style.display = 'block';
+    
+    // Set titles and metadata
+    const date1 = new Date(suggestion1.timestamp).toLocaleString();
+    const date2 = new Date(suggestion2.timestamp).toLocaleString();
+    
+    document.getElementById('suggestion1Title').textContent = 'Suggestion 1';
+    document.getElementById('suggestion1Meta').innerHTML = `
+      <small><strong>Date:</strong> ${date1}</small><br>
+      <small><strong>Wedding Type:</strong> ${suggestion1.weddingType}</small><br>
+      <small><strong>Bride Color:</strong> ${suggestion1.brideColor}</small>
+    `;
+    
+    document.getElementById('suggestion2Title').textContent = 'Suggestion 2';
+    document.getElementById('suggestion2Meta').innerHTML = `
+      <small><strong>Date:</strong> ${date2}</small><br>
+      <small><strong>Wedding Type:</strong> ${suggestion2.weddingType}</small><br>
+      <small><strong>Bride Color:</strong> ${suggestion2.brideColor}</small>
+    `;
+    
+    // Display color palettes comparison
+    const content1 = generateComparisonContent(suggestion1, suggestion2, true);
+    const content2 = generateComparisonContent(suggestion2, suggestion1, false);
+    
+    document.getElementById('suggestion1Content').innerHTML = content1;
+    document.getElementById('suggestion2Content').innerHTML = content2;
+    
+    // Scroll to comparison content
+    comparisonContent.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  
+  function generateComparisonContent(suggestion, otherSuggestion, isFirst) {
+    const data = suggestion.suggestions;
+    const otherData = otherSuggestion.suggestions;
+    
+    // Helper to check if values are different
+    const isDifferent = (val1, val2) => {
+      if (!val1 && !val2) return false;
+      return String(val1 || '').trim().toLowerCase() !== String(val2 || '').trim().toLowerCase();
+    };
+    
+    // Generate color palette comparison
+    const colorFields = [
+      { key: 'bride_colour_mapped', label: 'Bride' },
+      { key: 'groom_colour', label: 'Groom' },
+      { key: 'bridesmaids_colour', label: 'Bridesmaids' },
+      { key: 'best_men_colour', label: 'Best Men' },
+      { key: 'flower_deco_colour', label: 'Flower Decor' },
+      { key: 'hall_decor_colour', label: 'Hall Decor' }
+    ];
+    
+    let colorPaletteHtml = '<div class="comparison-section"><h5>Color Palette</h5><div class="color-grid">';
+    
+    colorFields.forEach(field => {
+      const value = data[field.key] || 'N/A';
+      const otherValue = otherData[field.key] || 'N/A';
+      const different = isDifferent(value, otherValue);
+      const diffClass = different ? 'different' : '';
+      
+      // Get color hex from color details if available
+      const colorDetails = data.color_details || {};
+      const fieldColorDetails = colorDetails[field.key] || {};
+      const hexColor = fieldColorDetails.hex || '#cccccc';
+      
+          colorPaletteHtml += `
+        <div class="comparison-color-card ${diffClass}">
+          <div class="color-swatch-small" style="background-color: ${hexColor};"></div>
+          <div class="color-info-small">
+            <strong>${field.label}:</strong>
+            <span>${value}</span>
+            ${different ? '<span class="diff-indicator" title="This color differs from the other suggestion">⚠ Different</span>' : ''}
+          </div>
+        </div>
+      `;
+    });
+    
+    colorPaletteHtml += '</div></div>';
+    
+    // Generate food menu comparison
+    const foodMenu1 = data.food_menu || 'N/A';
+    const foodMenu2 = otherData.food_menu || 'N/A';
+    const foodDifferent = isDifferent(foodMenu1, foodMenu2);
+    const foodDiffClass = foodDifferent ? 'different' : '';
+    
+    const foodHtml = `
+      <div class="comparison-section ${foodDiffClass}">
+        <h5>Food Menu ${foodDifferent ? '<span class="diff-indicator" title="This content differs from the other suggestion">⚠ Different</span>' : ''}</h5>
+        <div class="comparison-text-content">
+          <p>${foodMenu1}</p>
+        </div>
+      </div>
+    `;
+    
+    // Generate drinks comparison
+    const drinks1 = data.drinks || 'N/A';
+    const drinks2 = otherData.drinks || 'N/A';
+    const drinksDifferent = isDifferent(drinks1, drinks2);
+    const drinksDiffClass = drinksDifferent ? 'different' : '';
+    
+    const drinksHtml = `
+      <div class="comparison-section ${drinksDiffClass}">
+        <h5>Drinks ${drinksDifferent ? '<span class="diff-indicator" title="This content differs from the other suggestion">⚠ Different</span>' : ''}</h5>
+        <div class="comparison-text-content">
+          <p>${drinks1}</p>
+        </div>
+      </div>
+    `;
+    
+    // Generate locations comparison
+    const locations1 = data.pre_shoot_locations || 'N/A';
+    const locations2 = otherData.pre_shoot_locations || 'N/A';
+    const locationsDifferent = isDifferent(locations1, locations2);
+    const locationsDiffClass = locationsDifferent ? 'different' : '';
+    
+    const locationsHtml = `
+      <div class="comparison-section ${locationsDiffClass}">
+        <h5>Pre-Shoot Locations ${locationsDifferent ? '<span class="diff-indicator" title="This content differs from the other suggestion">⚠ Different</span>' : ''}</h5>
+        <div class="comparison-text-content">
+          <p>${locations1}</p>
+        </div>
+      </div>
+    `;
+    
+    // Generate confidence score comparison
+    const confidence1 = (data.suggestion_confidence || 0) * 100;
+    const confidence2 = (otherData.suggestion_confidence || 0) * 100;
+    const confidenceDifferent = Math.abs(confidence1 - confidence2) > 5; // More than 5% difference
+    const confidenceDiffClass = confidenceDifferent ? 'different' : '';
+    
+    const confidenceHtml = `
+      <div class="comparison-section ${confidenceDiffClass}">
+        <h5>Confidence Score ${confidenceDifferent ? '<span class="diff-indicator" title="This score differs from the other suggestion">⚠ Different</span>' : ''}</h5>
+        <div class="comparison-text-content">
+          <div class="confidence-display">
+            <strong>${confidence1.toFixed(1)}%</strong>
+            ${confidenceDifferent ? `<small class="diff-amount" title="Difference from the other suggestion">(${(confidence1 - confidence2).toFixed(1)}% ${confidence1 > confidence2 ? 'higher' : 'lower'})</small>` : ''}
+          </div>
+        </div>
+      </div>
+    `;
+    
+    return colorPaletteHtml + foodHtml + drinksHtml + locationsHtml + confidenceHtml;
   }
 
   function exportSuggestions() {
@@ -837,15 +1125,373 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     
-    const dataStr = JSON.stringify(suggestionHistory, null, 2);
-    const dataBlob = new Blob([dataStr], {type: 'application/json'});
+    try {
+      // Check if jsPDF is available
+      if (typeof window.jspdf === 'undefined') {
+        showError('PDF library not loaded. Please refresh the page.');
+        return;
+      }
+      
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      
+      // Page dimensions
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      const margin = 15;
+      const contentWidth = pageWidth - (margin * 2);
+      let yPosition = margin;
+      
+      // Helper function to add a new page if needed
+      const checkNewPage = (requiredHeight) => {
+        if (yPosition + requiredHeight > pageHeight - margin) {
+          doc.addPage();
+          yPosition = margin;
+          return true;
+        }
+        return false;
+      };
+      
+      // Helper function to add text with word wrapping
+      const addText = (text, x, y, maxWidth, fontSize = 10, style = 'normal') => {
+        doc.setFontSize(fontSize);
+        if (style === 'bold') {
+          doc.setFont(undefined, 'bold');
+        } else {
+          doc.setFont(undefined, 'normal');
+        }
+        
+        const lines = doc.splitTextToSize(text, maxWidth);
+        doc.text(lines, x, y);
+        return lines.length * (fontSize * 0.35) + 2; // Return height used
+      };
+      
+      // Helper function to add a colored box (for color swatches)
+      const addColorBox = (x, y, width, height, color) => {
+        try {
+          // Ensure color is a valid hex string
+          let hex = color.replace('#', '').trim();
+          
+          // Handle 3-digit hex colors (e.g., #fff)
+          if (hex.length === 3) {
+            hex = hex.split('').map(char => char + char).join('');
+          }
+          
+          // Ensure we have a valid 6-digit hex color
+          if (hex.length !== 6) {
+            hex = 'cccccc'; // Default to gray if invalid
+          }
+          
+          const r = parseInt(hex.substring(0, 2), 16);
+          const g = parseInt(hex.substring(2, 4), 16);
+          const b = parseInt(hex.substring(4, 6), 16);
+          
+          // Validate RGB values (0-255)
+          const validR = isNaN(r) ? 204 : Math.max(0, Math.min(255, r));
+          const validG = isNaN(g) ? 204 : Math.max(0, Math.min(255, g));
+          const validB = isNaN(b) ? 204 : Math.max(0, Math.min(255, b));
+          
+          doc.setFillColor(validR, validG, validB);
+          doc.rect(x, y - height, width, height, 'F');
+          doc.setDrawColor(200, 200, 200);
+          doc.rect(x, y - height, width, height, 'S');
+        } catch (error) {
+          console.error('Error adding color box:', error, 'Color:', color);
+          // Fallback to gray if error
+          doc.setFillColor(204, 204, 204);
+          doc.rect(x, y - height, width, height, 'F');
+          doc.setDrawColor(200, 200, 200);
+          doc.rect(x, y - height, width, height, 'S');
+        }
+      };
+      
+      // Helper function to convert RGB to hex
+      const rgbToHex = (r, g, b) => {
+        const toHex = (n) => {
+          const hex = Math.round(n).toString(16);
+          return hex.length === 1 ? '0' + hex : hex;
+        };
+        return '#' + toHex(r) + toHex(g) + toHex(b);
+      };
+      
+      // Title
+      doc.setFontSize(20);
+      doc.setFont(undefined, 'bold');
+      doc.setTextColor(63, 58, 52); // Dark brown
+      doc.text('Wedding Theme Suggestions Report', margin, yPosition);
+      yPosition += 12;
+      
+      // Date
+      const exportDate = new Date().toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+      doc.setFontSize(10);
+      doc.setFont(undefined, 'normal');
+      doc.setTextColor(100, 100, 100);
+      doc.text(`Generated on: ${exportDate}`, margin, yPosition);
+      yPosition += 8;
+      
+      doc.setTextColor(0, 0, 0); // Reset to black
+      
+      // Loop through each suggestion
+      suggestionHistory.forEach((suggestion, index) => {
+        checkNewPage(50); // Reserve space for a suggestion
+        
+        // Suggestion header
+        const suggestionNum = suggestionHistory.length - index; // Show in reverse order (newest first)
+        yPosition += 10;
+        
+        doc.setFontSize(16);
+        doc.setFont(undefined, 'bold');
+        doc.setTextColor(212, 175, 55); // Gold
+        doc.text(`Suggestion ${suggestionNum}`, margin, yPosition);
+        yPosition += 8;
+        
+        doc.setFontSize(10);
+        doc.setFont(undefined, 'normal');
+        doc.setTextColor(0, 0, 0);
+        
+        // Date and time
+        const suggestionDate = new Date(suggestion.timestamp).toLocaleString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+        doc.text(`Date: ${suggestionDate}`, margin, yPosition);
+        yPosition += 6;
+        
+        // Wedding type
+        doc.text(`Wedding Type: ${suggestion.weddingType}`, margin, yPosition);
+        yPosition += 6;
+        
+        // Bride color
+        doc.text(`Bride Color: ${suggestion.brideColor}`, margin, yPosition);
+        yPosition += 8;
+        
+        const data = suggestion.suggestions;
+        
+        // Color Palette Section
+        doc.setFontSize(12);
+        doc.setFont(undefined, 'bold');
+        doc.setTextColor(63, 58, 52);
+        doc.text('Color Palette', margin, yPosition);
+        yPosition += 7;
+        
+        doc.setFontSize(10);
+        doc.setFont(undefined, 'normal');
+        
+        const colorFields = [
+          { key: 'bride_colour_mapped', label: 'Bride', colorDetailsKey: 'bride_colour' },
+          { key: 'groom_colour', label: 'Groom', colorDetailsKey: 'groom_colour' },
+          { key: 'bridesmaids_colour', label: 'Bridesmaids', colorDetailsKey: 'bridesmaids_colour' },
+          { key: 'best_men_colour', label: 'Best Men', colorDetailsKey: 'best_men_colour' },
+          { key: 'flower_deco_colour', label: 'Flower Decor', colorDetailsKey: 'flower_deco_colour' },
+          { key: 'hall_decor_colour', label: 'Hall Decor', colorDetailsKey: 'hall_decor_colour' }
+        ];
+        
+        const colorDetails = data.color_details || {};
+        let colorX = margin;
+        const colorBoxSize = 12;
+        const colorSpacing = 45;
+        
+        // Helper function to convert RGB to hex (moved outside forEach for accessibility)
+        const rgbToHex = (r, g, b) => {
+          const toHex = (n) => {
+            const hex = Math.round(n).toString(16);
+            return hex.length === 1 ? '0' + hex : hex;
+          };
+          return '#' + toHex(r) + toHex(g) + toHex(b);
+        };
+        
+        colorFields.forEach((field, fieldIndex) => {
+          checkNewPage(20);
+          
+          const value = data[field.key] || 'N/A';
+          
+          // Try to get hex color from color_details
+          // First try the colorDetailsKey, then try the field key directly
+          let hexColor = '#cccccc'; // Default gray
+          
+          if (field.key === 'bride_colour_mapped') {
+            // Special handling for bride color - use original bride color if available
+            // suggestion.brideColor is the original hex color from the color picker
+            const originalBrideColor = suggestion.brideColor;
+            if (originalBrideColor && originalBrideColor.startsWith('#')) {
+              hexColor = originalBrideColor;
+            } else {
+              // Try to get from color_details using 'bride_colour' key
+              const brideColorDetails = colorDetails['bride_colour'] || colorDetails['bride_colour_mapped'] || {};
+              if (brideColorDetails.hex) {
+                hexColor = brideColorDetails.hex;
+              } else if (brideColorDetails.rgb) {
+                // Convert RGB to hex if only RGB is available
+                try {
+                  const rgbValues = brideColorDetails.rgb.split(',').map(v => parseInt(v.trim()));
+                  if (rgbValues.length === 3 && !rgbValues.some(isNaN)) {
+                    hexColor = rgbToHex(rgbValues[0], rgbValues[1], rgbValues[2]);
+                  }
+                } catch (e) {
+                  console.error('Error converting RGB to hex:', e);
+                }
+              }
+            }
+          } else {
+            // For other colors, get from color_details
+            const fieldColorDetails = colorDetails[field.colorDetailsKey] || colorDetails[field.key] || {};
+            if (fieldColorDetails.hex) {
+              hexColor = fieldColorDetails.hex;
+            } else if (fieldColorDetails.rgb) {
+              // Convert RGB to hex if only RGB is available
+              try {
+                const rgbValues = fieldColorDetails.rgb.split(',').map(v => parseInt(v.trim()));
+                if (rgbValues.length === 3 && !rgbValues.some(isNaN)) {
+                  hexColor = rgbToHex(rgbValues[0], rgbValues[1], rgbValues[2]);
+                }
+              } catch (e) {
+                console.error('Error converting RGB to hex:', e);
+              }
+            }
+          }
+          
+          // Ensure hex color is valid
+          if (!hexColor || !hexColor.startsWith('#')) {
+            hexColor = '#cccccc'; // Fallback to gray
+          }
+          
+          // Color swatch
+          addColorBox(colorX, yPosition + 5, colorBoxSize, colorBoxSize, hexColor);
+          
+          // Label and value
+          doc.text(`${field.label}:`, colorX + colorBoxSize + 3, yPosition);
+          doc.setFont(undefined, 'normal');
+          const valueLines = doc.splitTextToSize(value, colorSpacing - colorBoxSize - 10);
+          doc.text(valueLines, colorX + colorBoxSize + 3, yPosition + 5);
+          
+          // Move to next column or new row
+          if ((fieldIndex + 1) % 2 === 0) {
+            yPosition += 18;
+            colorX = margin;
+          } else {
+            colorX = margin + colorSpacing * 2;
+          }
+          
+          if ((fieldIndex + 1) % 2 === 0 && fieldIndex < colorFields.length - 1) {
+            yPosition += 3;
+          }
+        });
+        
+        // Reset x position and move to next section
+        colorX = margin;
+        if (colorFields.length % 2 !== 0) {
+          yPosition += 18;
+        }
+        yPosition += 10;
+        
+        // Food Menu
+        checkNewPage(30);
+        doc.setFontSize(12);
+        doc.setFont(undefined, 'bold');
+        doc.text('Food Menu', margin, yPosition);
+        yPosition += 7;
+        
+        doc.setFontSize(10);
+        doc.setFont(undefined, 'normal');
+        const foodMenu = data.food_menu || 'N/A';
+        const foodMenuLines = doc.splitTextToSize(foodMenu, contentWidth);
+        doc.text(foodMenuLines, margin, yPosition);
+        yPosition += (foodMenuLines.length * 5) + 5;
+        
+        // Drinks
+        checkNewPage(30);
+        doc.setFontSize(12);
+        doc.setFont(undefined, 'bold');
+        doc.text('Drinks', margin, yPosition);
+        yPosition += 7;
+        
+        doc.setFontSize(10);
+        doc.setFont(undefined, 'normal');
+        const drinks = data.drinks || 'N/A';
+        const drinksLines = doc.splitTextToSize(drinks, contentWidth);
+        doc.text(drinksLines, margin, yPosition);
+        yPosition += (drinksLines.length * 5) + 5;
+        
+        // Pre-Shoot Locations
+        checkNewPage(30);
+        doc.setFontSize(12);
+        doc.setFont(undefined, 'bold');
+        doc.text('Pre-Shoot Locations', margin, yPosition);
+        yPosition += 7;
+        
+        doc.setFontSize(10);
+        doc.setFont(undefined, 'normal');
+        const locations = data.pre_shoot_locations || 'N/A';
+        const locationsLines = doc.splitTextToSize(locations, contentWidth);
+        doc.text(locationsLines, margin, yPosition);
+        yPosition += (locationsLines.length * 5) + 5;
+        
+        // Confidence Score
+        if (data.suggestion_confidence !== undefined) {
+          checkNewPage(15);
+          const confidence = (data.suggestion_confidence * 100).toFixed(1);
+          doc.setFontSize(12);
+          doc.setFont(undefined, 'bold');
+          doc.text(`Confidence Score: ${confidence}%`, margin, yPosition);
+          yPosition += 7;
+        }
+        
+        // Cultural Significance (if available)
+        if (data.cultural_significance) {
+          checkNewPage(20);
+          doc.setFontSize(12);
+          doc.setFont(undefined, 'bold');
+          doc.text('Cultural Significance', margin, yPosition);
+          yPosition += 7;
+          
+          doc.setFontSize(10);
+          doc.setFont(undefined, 'normal');
+          const significanceLines = doc.splitTextToSize(data.cultural_significance, contentWidth);
+          doc.text(significanceLines, margin, yPosition);
+          yPosition += (significanceLines.length * 5) + 5;
+        }
+        
+        // Add separator line before next suggestion
+        if (index < suggestionHistory.length - 1) {
+          checkNewPage(15);
+          yPosition += 5;
+          doc.setDrawColor(212, 175, 55);
+          doc.setLineWidth(0.5);
+          doc.line(margin, yPosition, pageWidth - margin, yPosition);
+          yPosition += 10;
+        }
+      });
+      
+      // Footer
+      const pageCount = doc.internal.pages.length - 1;
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(150, 150, 150);
+        doc.text(
+          `Page ${i} of ${pageCount}`,
+          pageWidth - margin - 20,
+          pageHeight - 10
+        );
+      }
+      
+      // Save PDF
+      const fileName = `wedding-suggestions-${new Date().toISOString().split('T')[0]}.pdf`;
+      doc.save(fileName);
     
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(dataBlob);
-    link.download = `wedding-suggestions-${new Date().toISOString().split('T')[0]}.json`;
-    link.click();
-    
-    showSuccess('Suggestions exported successfully!');
+      showSuccess('Suggestions exported to PDF successfully!');
+      
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      showError('Failed to generate PDF. Please try again.');
+    }
   }
 
   function shareSuggestions() {
@@ -855,24 +1501,106 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     const latest = suggestionHistory[0];
-    const shareText = `Check out my wedding theme suggestions for ${latest.weddingType}! Generated by Wedding Planning System.`;
+    const data = latest.suggestions || {};
     
+    // Build detailed share text with suggestion information
+    let shareText = `🎉 Wedding Theme Suggestions\n\n`;
+    shareText += `Wedding Type: ${latest.weddingType}\n`;
+    shareText += `Bride Color: ${latest.brideColor}\n\n`;
+    
+    // Add color palette
+    if (data.bride_colour_mapped || data.groom_colour) {
+      shareText += `Color Palette:\n`;
+      if (data.bride_colour_mapped) shareText += `• Bride: ${data.bride_colour_mapped}\n`;
+      if (data.groom_colour) shareText += `• Groom: ${data.groom_colour}\n`;
+      if (data.bridesmaids_colour) shareText += `• Bridesmaids: ${data.bridesmaids_colour}\n`;
+      if (data.best_men_colour) shareText += `• Best Men: ${data.best_men_colour}\n`;
+      if (data.flower_deco_colour) shareText += `• Flower Decor: ${data.flower_deco_colour}\n`;
+      if (data.hall_decor_colour) shareText += `• Hall Decor: ${data.hall_decor_colour}\n`;
+      shareText += `\n`;
+    }
+    
+    // Add confidence score if available
+    if (data.suggestion_confidence !== undefined) {
+      const confidence = (data.suggestion_confidence * 100).toFixed(1);
+      shareText += `Confidence Score: ${confidence}%\n\n`;
+    }
+    
+    shareText += `Generated by Wedding Planning System`;
+    
+    // Don't include URL since localhost URLs don't work for sharing
+    // If you have a public URL in production, you can add it here
+    
+    // Try Web Share API first (mobile devices)
     if (navigator.share) {
       navigator.share({
         title: 'Wedding Theme Suggestions',
-        text: shareText,
-        url: window.location.href
+        text: shareText
+        // Removed url parameter - localhost URLs don't work for sharing
+      }).then(() => {
+        // Share was successful
+        showSuccess('Suggestions shared successfully!');
+      }).catch((error) => {
+        // User cancelled or share failed - fall back to clipboard
+        if (error.name !== 'AbortError') {
+          console.error('Share failed:', error);
+          // Fall through to clipboard fallback
+          copyToClipboard(shareText);
+        } else {
+          // User cancelled - don't show error
+          console.log('Share cancelled by user');
+        }
       });
     } else {
-      // Fallback: copy to clipboard
-      navigator.clipboard.writeText(shareText).then(() => {
-        showSuccess('Share text copied to clipboard!');
-      });
+      // Web Share API not available - use clipboard
+      copyToClipboard(shareText);
+    }
+    
+    // Helper function to copy to clipboard
+    function copyToClipboard(text) {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+          showSuccess('Share text copied to clipboard! You can paste it anywhere to share.');
+        }).catch((error) => {
+          console.error('Clipboard write failed:', error);
+          // Fallback: use older method
+          fallbackCopyToClipboard(text);
+        });
+      } else {
+        // Clipboard API not available - use fallback
+        fallbackCopyToClipboard(text);
+      }
+    }
+    
+    // Fallback method for older browsers
+    function fallbackCopyToClipboard(text) {
+      const textArea = document.createElement('textarea');
+      textArea.value = text;
+      textArea.style.position = 'fixed';
+      textArea.style.left = '-999999px';
+      textArea.style.top = '-999999px';
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      
+      try {
+        const successful = document.execCommand('copy');
+        if (successful) {
+          showSuccess('Share text copied to clipboard! You can paste it anywhere to share.');
+        } else {
+          showError('Failed to copy to clipboard. Please copy manually: ' + text);
+        }
+      } catch (err) {
+        console.error('Fallback copy failed:', err);
+        showError('Failed to copy to clipboard. Please copy manually: ' + text);
+      } finally {
+        document.body.removeChild(textArea);
+      }
     }
   }
 
   function showLoading(show) {
-    loadingIndicator.style.display = show ? 'flex' : 'none';
+    loadingIndicator.style.display = show ? 'block' : 'none';
   }
 
   function hideResults() {

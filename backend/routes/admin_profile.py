@@ -33,6 +33,38 @@ def _admin_required(fn):
     return wrapper
 
 
+@admin_profile_bp.route('/company', methods=['GET'])
+@login_required
+def get_company():
+    """
+    Get company details.
+    Accessible to all logged-in users (admin and planner).
+    """
+    try:
+        company = Company.query.first()
+        if not company:
+            return jsonify({
+                'company': None,
+                'message': 'Company details not set up yet'
+            }), 200
+        
+        return jsonify({
+            'company': {
+                'name': company.name,
+                'email': company.email,
+                'phone': company.phone,
+                'address': company.address,
+                'description': company.description
+            }
+        }), 200
+    except Exception as e:
+        print(f"Error fetching company details: {e}")
+        return jsonify({
+            'company': None,
+            'error': 'Failed to fetch company details'
+        }), 500
+
+
 @admin_profile_bp.route('/profile', methods=['GET'])
 @login_required
 @_admin_required
@@ -241,8 +273,8 @@ def create_user():
         return jsonify({'error': 'Name is required'}), 400
     if not email or not _is_valid_email(email):
         return jsonify({'error': 'Valid email is required'}), 400
-    if role not in ('admin', 'planner'):
-        return jsonify({'error': "Role must be either 'admin' or 'planner'"}), 400
+    if role not in ('admin', 'planner', 'coordinator'):
+        return jsonify({'error': "Role must be either 'admin', 'planner', or 'coordinator'"}), 400
     if len(password) < 6:
         return jsonify({'error': 'Password must be at least 6 characters long'}), 400
     if password != confirm_password:
@@ -290,8 +322,8 @@ def update_user(user_id):
         return jsonify({'error': 'Name is required'}), 400
     if not email or not _is_valid_email(email):
         return jsonify({'error': 'Valid email is required'}), 400
-    if role not in ('admin', 'planner'):
-        return jsonify({'error': "Role must be either 'admin' or 'planner'"}), 400
+    if role not in ('admin', 'planner', 'coordinator'):
+        return jsonify({'error': "Role must be either 'admin', 'planner', or 'coordinator'"}), 400
 
     if email != user.email and User.query.filter(User.email == email, User.id != user_id).first():
         return jsonify({'error': 'Email already in use'}), 409

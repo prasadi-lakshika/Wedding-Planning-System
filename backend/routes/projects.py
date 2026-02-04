@@ -15,6 +15,7 @@ from datetime import datetime, date
 from models.project import Project
 from models.user import User
 from models.theme_suggestion import ThemeSuggestion
+from models.checklist_task import ChecklistTask
 from extensions import db
 
 # Create blueprint for project routes
@@ -22,6 +23,47 @@ projects_bp = Blueprint('projects', __name__, url_prefix='/api/projects')
 
 
 VALID_PROJECT_STATUSES = {'planning', 'confirmed', 'in_progress', 'completed', 'cancelled'}
+VALID_TASK_STATUSES = {'pending', 'in_progress', 'completed'}
+
+
+def _user_can_access_project(project):
+    """Return True if the current user can access the provided project."""
+    if current_user.is_admin():
+        return True
+    if current_user.is_coordinator():
+        # Coordinators are not assigned to projects directly; they only see projects with tasks assigned to them
+        has_assigned_tasks = ChecklistTask.query.filter_by(
+            project_id=project.id,
+            assigned_to=current_user.id
+        ).first() is not None
+        return has_assigned_tasks
+    # Planners can access projects they are assigned to or created
+    return project.assigned_to == current_user.id or project.created_by == current_user.id
+
+
+def _planner_can_modify_project(project):
+    """Check whether a planner has write access to the project."""
+    if current_user.is_admin():
+        return True
+    if current_user.is_coordinator():
+        # Coordinators cannot modify projects
+        return False
+    return (
+        current_user.is_planner()
+        and (project.assigned_to == current_user.id or project.created_by == current_user.id)
+    )
+
+
+def _parse_due_date(raw_value):
+    """Parse due date in YYYY-MM-DD format."""
+    if not raw_value:
+        return None
+    if isinstance(raw_value, date):
+        return raw_value
+    try:
+        return datetime.strptime(raw_value, '%Y-%m-%d').date()
+    except (ValueError, TypeError):
+        raise ValueError('Invalid due_date format. Use YYYY-MM-DD')
 
 
 @projects_bp.route('/', methods=['GET'])
@@ -34,10 +76,19 @@ def get_projects():
         JSON: List of projects with user access control
     """
     try:
-        # Admin can see all projects, planners see only assigned/created projects
+        # Admin can see all projects, planners see assigned/created projects, coordinators see assigned or projects with tasks assigned to them
         if current_user.is_admin():
             projects = Project.query.order_by(Project.created_at.desc()).all()
+        elif current_user.is_coordinator():
+            # Coordinators are not assigned to projects directly; they only see projects with tasks assigned to them
+            project_ids_with_tasks = db.session.query(ChecklistTask.project_id).filter_by(
+                assigned_to=current_user.id
+            ).distinct().subquery()
+            projects = Project.query.filter(
+                Project.id.in_(db.session.query(project_ids_with_tasks))
+            ).order_by(Project.created_at.desc()).all()
         else:
+            # Planners can see projects they are assigned to or created
             projects = Project.query.filter(
                 (Project.assigned_to == current_user.id) |
                 (Project.created_by == current_user.id)
@@ -103,7 +154,17 @@ def get_projects_for_theme_suggestions():
         if current_user.is_admin():
             projects = Project.query.order_by(Project.created_at.desc()).all()
             print(f"Admin user - Found {len(projects)} total projects")
+        elif current_user.is_coordinator():
+            # Coordinators are not assigned to projects directly; they only see projects with tasks assigned to them
+            project_ids_with_tasks = db.session.query(ChecklistTask.project_id).filter_by(
+                assigned_to=current_user.id
+            ).distinct().subquery()
+            projects = Project.query.filter(
+                Project.id.in_(db.session.query(project_ids_with_tasks))
+            ).order_by(Project.created_at.desc()).all()
+            print(f"Coordinator user - Found {len(projects)} projects with assigned tasks (coordinator: {current_user.id})")
         else:
+            # Planners can see projects they are assigned to or created
             projects = Project.query.filter(
                 (Project.assigned_to == current_user.id) | 
                 (Project.created_by == current_user.id)
@@ -135,20 +196,25 @@ def get_projects_for_theme_suggestions():
 @login_required
 def get_project_assignees():
     """
-    Retrieve planner users that can be assigned to projects.
+    Retrieve users that can be assigned to projects (planners and coordinators).
     """
     try:
-        planners = User.query.filter_by(role='planner').order_by(User.name.asc(), User.username.asc()).all()
-        planner_list = [{
-            'id': planner.id,
-            'name': planner.name or planner.username,
-            'email': planner.email,
-            'username': planner.username
-        } for planner in planners]
+        # Get both planners and coordinators (for project and task assignment)
+        users = User.query.filter(
+            User.role.in_(['planner', 'coordinator'])
+        ).order_by(User.role.asc(), User.name.asc(), User.username.asc()).all()
+        
+        user_list = [{
+            'id': user.id,
+            'name': user.name or user.username,
+            'email': user.email,
+            'username': user.username,
+            'role': user.role
+        } for user in users]
         
         return jsonify({
-            'planners': planner_list,
-            'total': len(planner_list)
+            'planners': user_list,  # Keep key as 'planners' for backward compatibility
+            'total': len(user_list)
         }), 200
     except Exception as e:
         return jsonify({
@@ -219,9 +285,13 @@ def create_project():
             except (TypeError, ValueError):
                 return jsonify({'error': 'Invalid assigned_to value'}), 400
             
-            assigned_user = User.query.filter_by(id=assigned_to_id, role='planner').first()
+            # Projects can only be assigned to planners (not coordinators - coordinators are assigned to tasks)
+            assigned_user = User.query.filter(
+                User.id == assigned_to_id,
+                User.role == 'planner'
+            ).first()
             if not assigned_user:
-                return jsonify({'error': 'Assigned planner not found'}), 404
+                return jsonify({'error': 'Assigned user not found. Only planners can be assigned to projects. Coordinators are assigned to tasks within projects.'}), 404
         else:
             assigned_to_id = None
         
@@ -283,7 +353,7 @@ def get_project(project_id):
         project = Project.query.get_or_404(project_id)
         
         # Check access permissions
-        if not current_user.is_admin() and project.assigned_to != current_user.id and project.created_by != current_user.id:
+        if not _user_can_access_project(project):
             return jsonify({'error': 'Access denied'}), 403
         
         return jsonify({'project': project.to_dict()}), 200
@@ -311,7 +381,7 @@ def update_project(project_id):
         project = Project.query.get_or_404(project_id)
         
         # Check access permissions
-        if not current_user.is_admin() and project.assigned_to != current_user.id and project.created_by != current_user.id:
+        if not _planner_can_modify_project(project):
             return jsonify({'error': 'Access denied'}), 403
         
         data = request.get_json()
@@ -425,6 +495,328 @@ def delete_project(project_id):
         }), 500
 
 
+@projects_bp.route('/<int:project_id>/tasks', methods=['GET'])
+@login_required
+def list_project_tasks(project_id):
+    """Return checklist tasks for a project the user can access."""
+    try:
+        project = Project.query.get(project_id)
+        if not project:
+            return jsonify({'error': 'Project not found'}), 404
+        
+        if not _user_can_access_project(project):
+            return jsonify({'error': 'Access denied to this project'}), 403
+
+        try:
+            # Use joinedload to eagerly load relationships and avoid N+1 queries
+            from sqlalchemy.orm import joinedload
+            base_query = (
+                ChecklistTask.query
+                .options(joinedload(ChecklistTask.assignee))
+                .options(joinedload(ChecklistTask.creator))
+                .filter_by(project_id=project_id)
+            )
+            
+            # Coordinators can only see tasks assigned to them
+            if current_user.is_coordinator():
+                # MySQL doesn't support NULLS LAST in ORDER BY; order by fields directly
+                tasks = (
+                    base_query.filter_by(assigned_to=current_user.id)
+                    .order_by(
+                        ChecklistTask.due_date.asc(),
+                        ChecklistTask.status.asc(),
+                        ChecklistTask.created_at.asc(),
+                    )
+                    .all()
+                )
+            else:
+                # Admin and Planner can see all tasks in the project
+                tasks = (
+                    base_query.order_by(
+                        ChecklistTask.due_date.asc(),
+                        ChecklistTask.status.asc(),
+                        ChecklistTask.created_at.asc(),
+                    ).all()
+                )
+        except Exception as db_error:
+            # Database error - table might not exist or schema mismatch
+            import traceback
+            error_trace = traceback.format_exc()
+            error_msg = str(db_error)
+            print(f"Database error retrieving tasks for project {project_id}:")
+            print(f"Error: {error_msg}")
+            print(f"Traceback:\n{error_trace}")
+            
+            # Check if it's a table doesn't exist error
+            if 'doesn\'t exist' in error_msg.lower() or 'no such table' in error_msg.lower() or 'table' in error_msg.lower() and 'not found' in error_msg.lower():
+                return jsonify({
+                    'error': 'Table not found',
+                    'message': 'checklist_tasks table does not exist. Please restart the backend server to create it.'
+                }), 500
+            
+            return jsonify({
+                'error': 'Database error',
+                'message': f'Unable to retrieve tasks: {error_msg}',
+                'detail': 'Please check the backend console for more details.'
+            }), 500
+
+        summary = {
+            'total': len(tasks),
+            'completed': sum(1 for task in tasks if task.status == 'completed'),
+            'in_progress': sum(1 for task in tasks if task.status == 'in_progress'),
+            'pending': sum(1 for task in tasks if task.status == 'pending'),
+        }
+        summary['completion_rate'] = (
+            round((summary['completed'] / summary['total']) * 100, 2)
+            if summary['total'] else 0.0
+        )
+
+        # Serialize tasks with error handling
+        tasks_data = []
+        for task in tasks:
+            try:
+                tasks_data.append(task.to_dict())
+            except Exception as serialization_error:
+                import traceback
+                print(f"Error serializing task {task.id}: {serialization_error}")
+                print(traceback.format_exc())
+                # Include task with minimal data if serialization fails
+                tasks_data.append({
+                    'id': task.id,
+                    'project_id': task.project_id,
+                    'title': getattr(task, 'title', 'Unknown Task'),
+                    'description': None,
+                    'status': getattr(task, 'status', 'pending'),
+                    'due_date': None,
+                    'assigned_to': getattr(task, 'assigned_to', None),
+                    'assigned_to_name': None,
+                    'assigned_to_email': None,
+                    'created_by': getattr(task, 'created_by', None),
+                    'created_at': None,
+                    'updated_at': None,
+                })
+
+        return jsonify({
+            'tasks': tasks_data,
+            'summary': summary
+        }), 200
+
+    except Exception as exc:
+        import traceback
+        error_trace = traceback.format_exc()
+        error_msg = str(exc)
+        print(f"Error retrieving checklist tasks for project {project_id}:")
+        print(f"Error: {error_msg}")
+        print(f"Traceback:\n{error_trace}")
+        return jsonify({
+            'error': 'Failed to retrieve checklist tasks',
+            'message': str(exc)
+        }), 500
+
+
+@projects_bp.route('/<int:project_id>/tasks', methods=['POST'])
+@login_required
+def create_project_task(project_id):
+    """Create a new checklist task for the given project."""
+    try:
+        project = Project.query.get_or_404(project_id)
+        if not _planner_can_modify_project(project):
+            return jsonify({'error': 'Access denied'}), 403
+
+        data = request.get_json() or {}
+        title = (data.get('title') or '').strip()
+        description = (data.get('description') or '').strip() or None
+        status = (data.get('status') or 'pending').strip().lower()
+        due_date_raw = data.get('due_date')
+        assigned_to_raw = data.get('assigned_to')
+
+        if not title:
+            return jsonify({'error': 'Task title is required'}), 400
+        if status not in VALID_TASK_STATUSES:
+            return jsonify({
+                'error': f"Invalid status. Must be one of {', '.join(sorted(VALID_TASK_STATUSES))}"
+            }), 400
+
+        try:
+            due_date = _parse_due_date(due_date_raw)
+        except ValueError as exc:
+            return jsonify({'error': str(exc)}), 400
+
+        assigned_user = None
+        if assigned_to_raw not in (None, '', 'null'):
+            try:
+                assigned_id = int(assigned_to_raw)
+            except (TypeError, ValueError):
+                return jsonify({'error': 'assigned_to must be a valid user id'}), 400
+            assigned_user = User.query.get(assigned_id)
+            if not assigned_user:
+                return jsonify({'error': 'Assigned user not found'}), 404
+            if assigned_user.role not in ('planner', 'admin', 'coordinator'):
+                return jsonify({'error': 'Tasks can only be assigned to planner, admin, or coordinator users'}), 400
+            # Planners can assign tasks to themselves or coordinators
+            if current_user.is_planner() and assigned_user.id != current_user.id and assigned_user.role != 'coordinator':
+                return jsonify({'error': 'Planners can only assign tasks to themselves or coordinators'}), 403
+
+        task = ChecklistTask(
+            project_id=project_id,
+            title=title,
+            description=description,
+            status=status,
+            due_date=due_date,
+            assigned_to=assigned_user.id if assigned_user else None,
+            created_by=current_user.id
+        )
+
+        db.session.add(task)
+        db.session.commit()
+        
+        # Refresh to load relationships
+        db.session.refresh(task)
+        from sqlalchemy.orm import joinedload
+        task = ChecklistTask.query.options(
+            joinedload(ChecklistTask.assignee),
+            joinedload(ChecklistTask.creator)
+        ).get(task.id)
+
+        return jsonify({
+            'message': 'Task created successfully',
+            'task': task.to_dict()
+        }), 201
+
+    except Exception as exc:
+        db.session.rollback()
+        return jsonify({
+            'error': 'Failed to create task',
+            'message': str(exc)
+        }), 500
+
+
+@projects_bp.route('/<int:project_id>/tasks/<int:task_id>', methods=['PUT', 'PATCH'])
+@login_required
+def update_project_task(project_id, task_id):
+    """Update an existing checklist task."""
+    try:
+        project = Project.query.get_or_404(project_id)
+        
+        # Check project access
+        if not _user_can_access_project(project):
+            return jsonify({'error': 'Access denied'}), 403
+
+        task = ChecklistTask.query.filter_by(id=task_id, project_id=project_id).first_or_404()
+        
+        # Coordinators can only update tasks assigned to them
+        if current_user.is_coordinator():
+            if task.assigned_to != current_user.id:
+                return jsonify({'error': 'Coordinators can only update tasks assigned to them'}), 403
+            # Coordinators can only update status, description, and due_date (not title or assigned_to)
+            allowed_fields = {'status', 'description', 'due_date'}
+            disallowed = {field for field in (request.get_json() or {}).keys() if field not in allowed_fields}
+            if disallowed:
+                return jsonify({
+                    'error': 'Coordinators are not allowed to update these fields',
+                    'fields': sorted(disallowed)
+                }), 403
+        elif not _planner_can_modify_project(project):
+            # For planners/admins, check if they can modify the project
+            return jsonify({'error': 'Access denied'}), 403
+        
+        data = request.get_json() or {}
+
+        if 'title' in data:
+            title = (data.get('title') or '').strip()
+            if not title:
+                return jsonify({'error': 'Task title cannot be empty'}), 400
+            task.title = title
+
+        if 'description' in data:
+            task.description = (data.get('description') or '').strip() or None
+
+        if 'status' in data:
+            status = (data.get('status') or '').strip().lower()
+            if status not in VALID_TASK_STATUSES:
+                return jsonify({
+                    'error': f"Invalid status. Must be one of {', '.join(sorted(VALID_TASK_STATUSES))}"
+                }), 400
+            task.status = status
+
+        if 'due_date' in data:
+            try:
+                task.due_date = _parse_due_date(data.get('due_date'))
+            except ValueError as exc:
+                return jsonify({'error': str(exc)}), 400
+
+        if 'assigned_to' in data:
+            assigned_to_raw = data.get('assigned_to')
+            if assigned_to_raw in (None, '', 'null'):
+                task.assigned_to = None
+            else:
+                try:
+                    assigned_id = int(assigned_to_raw)
+                except (TypeError, ValueError):
+                    return jsonify({'error': 'assigned_to must be a valid user id'}), 400
+                assigned_user = User.query.get(assigned_id)
+                if not assigned_user:
+                    return jsonify({'error': 'Assigned user not found'}), 404
+                if assigned_user.role not in ('planner', 'admin', 'coordinator'):
+                    return jsonify({'error': 'Tasks can only be assigned to planner, admin, or coordinator users'}), 400
+                # Planners can assign tasks to themselves or coordinators
+                if current_user.is_planner() and assigned_user.id != current_user.id and assigned_user.role != 'coordinator':
+                    return jsonify({'error': 'Planners can only assign tasks to themselves or coordinators'}), 403
+                task.assigned_to = assigned_user.id
+
+        db.session.commit()
+        
+        # Refresh to load relationships
+        db.session.refresh(task)
+        from sqlalchemy.orm import joinedload
+        task = ChecklistTask.query.options(
+            joinedload(ChecklistTask.assignee),
+            joinedload(ChecklistTask.creator)
+        ).get(task.id)
+        
+        return jsonify({
+            'message': 'Task updated successfully',
+            'task': task.to_dict()
+        }), 200
+
+    except Exception as exc:
+        db.session.rollback()
+        return jsonify({
+            'error': 'Failed to update task',
+            'message': str(exc)
+        }), 500
+
+
+@projects_bp.route('/<int:project_id>/tasks/<int:task_id>', methods=['DELETE'])
+@login_required
+def delete_project_task(project_id, task_id):
+    """Delete a checklist task."""
+    try:
+        project = Project.query.get_or_404(project_id)
+        if not _planner_can_modify_project(project):
+            return jsonify({'error': 'Access denied'}), 403
+
+        task = ChecklistTask.query.filter_by(id=task_id, project_id=project_id).first_or_404()
+
+        # Coordinators cannot delete tasks
+        if current_user.is_coordinator():
+            return jsonify({'error': 'Coordinators cannot delete tasks'}), 403
+
+        if current_user.is_planner() and task.created_by not in (None, current_user.id) and task.assigned_to != current_user.id:
+            return jsonify({'error': 'Planners can only delete their own or assigned tasks'}), 403
+
+        db.session.delete(task)
+        db.session.commit()
+        return jsonify({'message': 'Task deleted successfully'}), 200
+
+    except Exception as exc:
+        db.session.rollback()
+        return jsonify({
+            'error': 'Failed to delete task',
+            'message': str(exc)
+        }), 500
+
+
 @projects_bp.route('/<int:project_id>/theme-suggestions', methods=['POST'])
 @login_required
 def save_theme_suggestions(project_id):
@@ -452,8 +844,12 @@ def save_theme_suggestions(project_id):
         project = Project.query.get_or_404(project_id)
         
         # Check access permissions
-        if not current_user.is_admin() and project.assigned_to != current_user.id and project.created_by != current_user.id:
+        if not _user_can_access_project(project):
             return jsonify({'error': 'Access denied'}), 403
+        
+        # Coordinators cannot save suggestions
+        if current_user.is_coordinator():
+            return jsonify({'error': 'Coordinators cannot save theme suggestions'}), 403
         
         data = request.get_json()
         if not data:

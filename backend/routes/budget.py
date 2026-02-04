@@ -22,6 +22,15 @@ def _user_can_access_project(project: Project) -> bool:
         return False
     if current_user.is_admin():
         return True
+    if current_user.is_coordinator():
+        # Coordinators are not assigned to projects directly; they only see projects with tasks assigned to them
+        from models.checklist_task import ChecklistTask
+        has_assigned_tasks = ChecklistTask.query.filter_by(
+            project_id=project.id,
+            assigned_to=current_user.id
+        ).first() is not None
+        return has_assigned_tasks
+    # Planners can access projects they are assigned to or created
     return project.created_by == current_user.id or project.assigned_to == current_user.id
 
 
@@ -61,7 +70,8 @@ def list_budget_items(project_id):
     items = (
         BudgetItem.query
         .filter_by(project_id=project_id)
-        .order_by(BudgetItem.expense_date.desc().nullslast(), BudgetItem.updated_at.desc())
+        # MySQL doesn't support NULLS LAST; rely on default ordering without it
+        .order_by(BudgetItem.expense_date.desc(), BudgetItem.updated_at.desc())
         .all()
     )
 
@@ -86,6 +96,10 @@ def create_budget_item(project_id):
     project = Project.query.get_or_404(project_id)
     if not _user_can_access_project(project):
         return jsonify({'error': 'Access denied'}), 403
+    
+    # Coordinators cannot create budget items (read-only access)
+    if current_user.is_coordinator():
+        return jsonify({'error': 'Coordinators cannot create budget items'}), 403
 
     if not request.is_json:
         return jsonify({'error': 'Content-Type must be application/json'}), 400
@@ -131,6 +145,10 @@ def update_budget_item(item_id):
     item = BudgetItem.query.get_or_404(item_id)
     if not _user_can_access_project(item.project):
         return jsonify({'error': 'Access denied'}), 403
+    
+    # Coordinators cannot update budget items (read-only access)
+    if current_user.is_coordinator():
+        return jsonify({'error': 'Coordinators cannot update budget items'}), 403
 
     if not request.is_json:
         return jsonify({'error': 'Content-Type must be application/json'}), 400
@@ -185,6 +203,10 @@ def delete_budget_item(item_id):
     item = BudgetItem.query.get_or_404(item_id)
     if not _user_can_access_project(item.project):
         return jsonify({'error': 'Access denied'}), 403
+    
+    # Coordinators cannot delete budget items (read-only access)
+    if current_user.is_coordinator():
+        return jsonify({'error': 'Coordinators cannot delete budget items'}), 403
 
     try:
         db.session.delete(item)

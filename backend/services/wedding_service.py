@@ -16,7 +16,8 @@ from models.wedding_planning import (
     ColorRules,
     FoodLocations,
     ColorMappings,
-    RestrictedColours
+    RestrictedColours,
+    WeddingType
 )
 from extensions import db
 
@@ -427,16 +428,46 @@ def get_wedding_suggestions(wedding_type: str, bride_color: str) -> Dict:
 
 def get_available_wedding_types() -> List[str]:
     """
-    Get list of all available wedding types from database.
+    Get list of all available wedding types from wedding_types table.
     
     Returns:
-        List[str]: List of available wedding types
+        List[str]: List of available wedding type names (active only)
     """
-    wedding_types = CulturalColors.query.with_entities(
+    # First try to get from wedding_types table
+    wedding_types = WeddingType.query.filter_by(is_active=True).all()
+    
+    if wedding_types:
+        # Return names from wedding_types table
+        return [wt.name for wt in wedding_types]
+    
+    # Fallback: if wedding_types table is empty, get from cultural_colors (for migration)
+    print("Warning: wedding_types table is empty. Falling back to cultural_colors table.")
+    wedding_types_fallback = CulturalColors.query.with_entities(
         CulturalColors.wedding_type
     ).distinct().all()
     
-    return [wt[0] for wt in wedding_types]
+    return [wt[0] for wt in wedding_types_fallback]
+
+
+def get_wedding_type_details(wedding_type_name: str) -> Optional[Dict]:
+    """
+    Get detailed information about a wedding type from wedding_types table.
+    
+    Args:
+        wedding_type_name (str): Name of the wedding type
+    
+    Returns:
+        Optional[Dict]: Wedding type details or None if not found
+    """
+    wedding_type = WeddingType.query.filter(
+        db.func.lower(WeddingType.name) == wedding_type_name.lower().strip(),
+        WeddingType.is_active == True
+    ).first()
+    
+    if wedding_type:
+        return wedding_type.to_dict()
+    
+    return None
 
 
 def get_available_colors_for_wedding_type(wedding_type: str) -> List[Dict]:

@@ -66,10 +66,10 @@ function handlePageNavigation(userRole, isLoggedIn) {
     console.log(`${index + 1}. ${link.textContent.trim()}: ${shouldShow ? 'SHOWN' : 'HIDDEN'}`);
   });
 
-  // Handle planner-only links
+  // Handle planner-only links (planners and coordinators see "My Account")
   console.log('=== PLANNER LINKS ===');
   plannerLinks.forEach((link, index) => {
-    const shouldShow = isLoggedIn === 'true' && userRole === 'planner';
+    const shouldShow = isLoggedIn === 'true' && (userRole === 'planner' || userRole === 'coordinator');
     link.style.display = shouldShow ? 'inline' : 'none';
     console.log(`${index + 1}. ${link.textContent.trim()}: ${shouldShow ? 'SHOWN' : 'HIDDEN'}`);
   });

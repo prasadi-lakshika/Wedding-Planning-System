@@ -6,8 +6,10 @@ This module defines database models for the wedding planning system including:
 - Color combination rules for suggestions
 - Food menus and location recommendations
 - Color mappings for unknown colors
+- Wedding types management
 """
 
+from datetime import datetime
 from extensions import db
 
 
@@ -168,3 +170,41 @@ class RestrictedColours(db.Model):
 
     def __repr__(self):
         return f'<RestrictedColours {self.wedding_type} - {self.restricted_colour}>'
+
+
+class WeddingType(db.Model):
+    """
+    Model for storing wedding types.
+    
+    This table stores all available wedding types with their descriptions
+    and metadata. Wedding types are now managed independently from colors.
+    """
+    
+    __tablename__ = 'wedding_types'
+    __table_args__ = {'extend_existing': True}
+
+    # Primary key
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    
+    # Wedding type information
+    name = db.Column(db.String(100), nullable=False, unique=True)
+    description = db.Column(db.Text, nullable=True)
+    is_active = db.Column(db.Boolean, default=True, nullable=False)
+    
+    # Timestamps
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    def to_dict(self):
+        """Convert to dictionary representation."""
+        return {
+            'id': self.id,
+            'name': self.name,
+            'description': self.description,
+            'is_active': self.is_active,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+        }
+
+    def __repr__(self):
+        return f'<WeddingType {self.name}>'

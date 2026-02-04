@@ -59,6 +59,22 @@ class Config:
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB max file upload
     DECISION_TREE_MAX_DEPTH = 10
     COLOR_MAPPING_CACHE_TIMEOUT = 3600  # 1 hour
+    
+    # Email Configuration (for password reset)
+    MAIL_SERVER = os.environ.get('MAIL_SERVER') or 'smtp.gmail.com'
+    MAIL_PORT = int(os.environ.get('MAIL_PORT') or 587)
+    MAIL_USE_TLS = os.environ.get('MAIL_USE_TLS', 'True').lower() == 'true'
+    MAIL_USE_SSL = os.environ.get('MAIL_USE_SSL', 'False').lower() == 'true'
+    MAIL_USERNAME = os.environ.get('MAIL_USERNAME') or 'prasadilakshika01@gmail.com'
+    MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD') or 'tscp twin ccdx smbf'
+    MAIL_DEFAULT_SENDER = os.environ.get('MAIL_DEFAULT_SENDER') or 'prasadilakshika01@gmail.com'
+    
+    # Base URL for password reset links
+    BASE_URL = os.environ.get('BASE_URL') or 'http://localhost:8000'
+    
+    # Password Reset Configuration
+    PASSWORD_RESET_TOKEN_EXPIRATION_HOURS = 1  # Token expires in 1 hour
+    PASSWORD_RESET_RATE_LIMIT_PER_HOUR = 3  # Max 3 requests per email per hour
 
 
 class DevelopmentConfig(Config):

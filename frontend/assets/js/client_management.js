@@ -7,15 +7,8 @@ document.addEventListener('DOMContentLoaded', () => {
     { value: 'completed', label: 'Completed' },
     { value: 'cancelled', label: 'Cancelled' }
   ];
-  const FALLBACK_WEDDING_TYPES = [
-    'Kandyan Sinhala Wedding',
-    'Tamil Hindu Wedding',
-    'Tamil Christian Wedding',
-    'Muslim Wedding',
-    'Catholic Church Wedding',
-    'Western Destination Wedding',
-    'Traditional Poruwa Ceremony'
-  ];
+  // Removed hardcoded fallback - wedding types should only come from database
+  // const FALLBACK_WEDDING_TYPES = []; // No longer needed - always use database
 
   const state = {
     projects: [],
@@ -25,6 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
     selectedRowId: null,
     user: null,
     isAdmin: false,
+    isCoordinator: false,
     isAuthenticated: false
   };
 
@@ -75,6 +69,11 @@ document.addEventListener('DOMContentLoaded', () => {
       populatePlannerAssignee();
     }
 
+    // Hide "New Project" button for coordinators (they can't create projects)
+    if (state.isCoordinator && elements.newProjectBtn) {
+      elements.newProjectBtn.style.display = 'none';
+    }
+
     populateWeddingTypeOptions();
     await loadProjects();
     renderProjects();
@@ -110,6 +109,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       state.user = data.user;
       state.isAdmin = data.user.role === 'admin';
+      state.isCoordinator = data.user.role === 'coordinator';
       state.isAuthenticated = true;
 
       // Keep local storage aligned for navigation scripts
@@ -150,12 +150,13 @@ document.addEventListener('DOMContentLoaded', () => {
       state.weddingTypes = Array.isArray(data.wedding_types)
         ? data.wedding_types.map(item => item.name)
         : [];
-      if (!state.weddingTypes.length) {
-        state.weddingTypes = [...FALLBACK_WEDDING_TYPES];
-      }
+      // Removed fallback to hardcoded list - always use database only
+      // If no wedding types found, keep empty array and show appropriate message
     } catch (error) {
-      console.warn('Failed to load wedding types, using fallback list.', error);
-      state.weddingTypes = [...FALLBACK_WEDDING_TYPES];
+      console.warn('Failed to load wedding types from database.', error);
+      state.weddingTypes = []; // No fallback - must load from database
+      // Show error message to user
+      showFormMessage('error', 'Failed to load wedding types from database. Please refresh the page.');
     }
   }
 
@@ -245,7 +246,7 @@ document.addEventListener('DOMContentLoaded', () => {
         </td>
         <td class="actions-col">
           <button class="table-btn primary" data-action="edit" data-id="${project.id}">
-            ${state.isAdmin ? 'Edit' : 'View'}
+            ${state.isAdmin || (!state.isCoordinator && (Number(project.assigned_to) === Number(state.user?.id) || Number(project.created_by) === Number(state.user?.id))) ? 'Edit' : 'View'}
           </button>
           ${state.isAdmin ? `<button class="table-btn danger" data-action="delete" data-id="${project.id}">Delete</button>` : ''}
         </td>
@@ -289,7 +290,12 @@ document.addEventListener('DOMContentLoaded', () => {
     state.selectedRowId = project.id;
     highlightSelectedRow();
 
-    elements.formTitle.textContent = `Editing ${project.bride_name || 'Project'}`;
+    // Coordinators can only view, not edit
+    if (state.isCoordinator) {
+      elements.formTitle.textContent = `Viewing ${project.bride_name || 'Project'}`;
+    } else {
+      elements.formTitle.textContent = `Editing ${project.bride_name || 'Project'}`;
+    }
     elements.saveBtn.textContent = state.isAdmin ? 'Save Changes' : 'Save Notes';
     elements.deleteBtn.hidden = !state.isAdmin;
 
@@ -331,6 +337,15 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function applyFieldAccessRules(project = null) {
+    // Coordinators cannot edit projects at all (read-only access)
+    if (state.isCoordinator) {
+      toggleAdminFields(false);
+      elements.status.disabled = true;
+      elements.notes.disabled = true;
+      elements.saveBtn.disabled = true;
+      return;
+    }
+
     if (state.isAdmin) {
       toggleAdminFields(true);
       elements.saveBtn.disabled = false;
@@ -430,6 +445,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (!state.isAuthenticated) {
       showFormMessage('error', 'You must be logged in to save changes.');
+      return;
+    }
+
+    // Coordinators cannot submit project updates
+    if (state.isCoordinator) {
+      showFormMessage('error', 'Coordinators cannot edit projects. You have read-only access.');
       return;
     }
 

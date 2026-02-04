@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Data Management - Wedding Planning System</title>
+  <link rel="stylesheet" href="assets/css/styles.css" />
+</head>
+<body>
+  <header>
+    <div class="navbar">
+      <nav id="mainNav">
+        <!-- Home link for logged-in users -->
+        <a href="index.html" class="nav-link common-link" style="display:none;">Home</a>
+        
+        <!-- Common links for all logged-in users -->
+        <a href="dashboard.html" class="nav-link common-link" style="display:none;">Dashboard</a>
+        <a href="theme_suggestions.html" class="nav-link common-link" style="display:none;">Theme Suggestions</a>
+        <a href="checklist.html" class="nav-link common-link" style="display:none;">Checklist</a>
+        <a href="budget.html" class="nav-link common-link" style="display:none;">Budget</a>
+        <a href="calendar.html" class="nav-link common-link" style="display:none;">Calendar</a>
+        <a href="client_management.html" class="nav-link common-link" style="display:none;">Client Management</a>
+        
+        <!-- Planner-only links -->
+        <a href="my_account.html" class="nav-link planner-only-link" style="display:none;">My Account</a>
+        
+        <!-- Admin-only links -->
+        <a href="profile.html" class="nav-link admin-only-link" style="display:none;">Profile</a>
+        <a href="admin_dashboard.html" class="nav-link admin-only-link" style="display:none;">Users</a>
+        <a href="admin_data_management.html" class="nav-link admin-only-link active" style="display:none;">Data Management</a>
+        
+        <!-- Logout link (shown when logged in) -->
+        <a href="#" id="logoutLink" class="nav-link logout-link" style="display:none;">Logout</a>
+      </nav>
+      <button class="login-btn" id="openLogin">Sign In / Log In</button>
+    </div>
+  </header>
+  
+  <main class="main-content data-management-page">
+    <h2>Data Management</h2>
+    <section id="dataManagementSection">
+      <div class="data-header">
+        <div>
+          <h3>Master Data Management</h3>
+          <p class="data-subtitle">Manage wedding types, colors, rules, food & locations, and restricted colours.</p>
+        </div>
+      </div>
+
+      <!-- Tab Navigation -->
+      <div class="tab-container">
+        <button class="tab-btn active" data-tab="wedding-types">Wedding Types</button>
+        <button class="tab-btn" data-tab="cultural-colors">Cultural Colors</button>
+        <button class="tab-btn" data-tab="color-rules">Color Rules</button>
+        <button class="tab-btn" data-tab="food-locations">Food & Locations</button>
+        <button class="tab-btn" data-tab="restricted-colours">Restricted Colours</button>
+      </div>
+
+      <!-- Alert Messages -->
+      <div id="listAlert" class="profile-alert" hidden></div>
+
+      <!-- Tab Content Container -->
+      <div class="tab-content-container">
+        <!-- Wedding Types Tab -->
+        <div class="tab-content active" id="tab-wedding-types">
+          <div class="data-management-grid">
+            <form id="weddingTypeForm" class="data-form">
+              <h4 id="weddingTypeFormTitle">Create New Wedding Type</h4>
+              <input type="hidden" id="weddingTypeId" />
+              <div id="weddingTypeFormAlert" class="profile-alert" hidden></div>
+              
+              <div class="form-group">
+                <label for="weddingTypeName">Name <span class="required">*</span></label>
+                <input type="text" id="weddingTypeName" required maxlength="100" />
+              </div>
+              
+              <div class="form-group">
+                <label for="weddingTypeDescription">Description</label>
+                <textarea id="weddingTypeDescription" rows="3"></textarea>
+              </div>
+              
+              <div class="form-group">
+                <label>
+                  <input type="checkbox" id="weddingTypeIsActive" checked />
+                  Active
+                </label>
+              </div>
+              
+              <div class="form-actions">
+                <button type="button" class="secondary-btn" id="weddingTypeCancelBtn">Cancel</button>
+                <button type="submit" class="primary-btn">Save</button>
+              </div>
+            </form>
+
+            <div class="data-list-card">
+              <div class="list-header">
+                <h4>Wedding Types</h4>
+                <button class="primary-btn" id="weddingTypeNewBtn">+ New</button>
+              </div>
+              <div class="table-container">
+                <table id="weddingTypeTable">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Name</th>
+                      <th>Description</th>
+                      <th>Status</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="weddingTypeTableBody">
+                    <!-- Populated via JavaScript -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Cultural Colors Tab -->
+        <div class="tab-content" id="tab-cultural-colors">
+          <div class="data-management-grid">
+            <form id="culturalColorForm" class="data-form">
+              <h4 id="culturalColorFormTitle">Create New Cultural Color</h4>
+              <input type="hidden" id="culturalColorOldWeddingType" />
+              <input type="hidden" id="culturalColorOldColourName" />
+              
+              <div id="culturalColorFormAlert" class="profile-alert" hidden></div>
+              
+              <div class="form-group">
+                <label for="culturalColorWeddingType">Wedding Type <span class="required">*</span></label>
+                <select id="culturalColorWeddingType" required></select>
+              </div>
+              
+              <div class="form-group">
+                <label for="culturalColorName">Color Name <span class="required">*</span></label>
+                <input type="text" id="culturalColorName" required maxlength="20" />
+              </div>
+              
+              <div class="form-group">
+                <label for="culturalColorRgb">RGB Value <span class="required">*</span></label>
+                <div class="color-input-wrapper">
+                  <input type="text" id="culturalColorRgb" required placeholder="255,255,255 or #FFFFFF" />
+                  <div class="color-preview" id="culturalColorPreview"></div>
+                </div>
+                <small class="field-hint">Format: "255,255,255", "#FFFFFF", or "rgb(255,255,255)"</small>
+              </div>
+              
+              <div class="form-group">
+                <label for="culturalColorSignificance">Cultural Significance</label>
+                <input type="text" id="culturalColorSignificance" maxlength="100" />
+              </div>
+              
+              <div class="form-actions">
+                <button type="button" class="secondary-btn" id="culturalColorCancelBtn">Cancel</button>
+                <button type="submit" class="primary-btn">Save</button>
+              </div>
+            </form>
+
+            <div class="data-list-card">
+              <div class="list-header">
+                <h4>Cultural Colors</h4>
+                <div class="filter-group">
+                  <select id="culturalColorFilter" class="styled-select">
+                    <option value="">All Wedding Types</option>
+                  </select>
+                  <button class="primary-btn" id="culturalColorNewBtn">+ New</button>
+                </div>
+              </div>
+              <div class="table-container">
+                <table id="culturalColorTable">
+                  <thead>
+                    <tr>
+                      <th>Wedding Type</th>
+                      <th>Color Name</th>
+                      <th>RGB</th>
+                      <th>Preview</th>
+                      <th>Significance</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="culturalColorTableBody">
+                    <!-- Populated via JavaScript -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Color Rules Tab -->
+        <div class="tab-content" id="tab-color-rules">
+          <div class="data-management-grid">
+            <form id="colorRuleForm" class="data-form">
+              <h4 id="colorRuleFormTitle">Create New Color Rule</h4>
+              <input type="hidden" id="colorRuleOldWeddingType" />
+              <input type="hidden" id="colorRuleOldBrideColour" />
+              
+              <div id="colorRuleFormAlert" class="profile-alert" hidden></div>
+              
+              <div class="form-group">
+                <label for="colorRuleWeddingType">Wedding Type <span class="required">*</span></label>
+                <select id="colorRuleWeddingType" required></select>
+              </div>
+              
+              <div class="form-group">
+                <label for="colorRuleBrideColour">Bride Color <span class="required">*</span></label>
+                <select id="colorRuleBrideColour" required></select>
+              </div>
+              
+              <div class="form-group">
+                <label for="colorRuleGroomColour">Groom Color <span class="required">*</span></label>
+                <input type="text" id="colorRuleGroomColour" required maxlength="50" />
+              </div>
+              
+              <div class="form-group">
+                <label for="colorRuleBridesmaidsColour">Bridesmaids Color <span class="required">*</span></label>
+                <input type="text" id="colorRuleBridesmaidsColour" required maxlength="50" />
+              </div>
+              
+              <div class="form-group">
+                <label for="colorRuleBestMenColour">Best Men Color <span class="required">*</span></label>
+                <input type="text" id="colorRuleBestMenColour" required maxlength="50" />
+              </div>
+              
+              <div class="form-group">
+                <label for="colorRuleFlowerDecoColour">Flower Decoration Color <span class="required">*</span></label>
+                <input type="text" id="colorRuleFlowerDecoColour" required maxlength="50" />
+              </div>
+              
+              <div class="form-group">
+                <label for="colorRuleHallDecorColour">Hall Decoration Color <span class="required">*</span></label>
+                <input type="text" id="colorRuleHallDecorColour" required maxlength="50" />
+              </div>
+              
+              <div class="form-actions">
+                <button type="button" class="secondary-btn" id="colorRuleCancelBtn">Cancel</button>
+                <button type="submit" class="primary-btn">Save</button>
+              </div>
+            </form>
+
+            <div class="data-list-card">
+              <div class="list-header">
+                <h4>Color Rules</h4>
+                <div class="filter-group">
+                  <select id="colorRuleFilter" class="styled-select">
+                    <option value="">All Wedding Types</option>
+                  </select>
+                  <button class="primary-btn" id="colorRuleNewBtn">+ New</button>
+                </div>
+              </div>
+              <div class="table-container">
+                <table id="colorRuleTable">
+                  <thead>
+                    <tr>
+                      <th>Wedding Type</th>
+                      <th>Bride Color</th>
+                      <th>Groom</th>
+                      <th>Bridesmaids</th>
+                      <th>Best Men</th>
+                      <th>Flower Deco</th>
+                      <th>Hall Decor</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="colorRuleTableBody">
+                    <!-- Populated via JavaScript -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Food & Locations Tab -->
+        <div class="tab-content" id="tab-food-locations">
+          <div class="data-management-grid">
+            <form id="foodLocationForm" class="data-form">
+              <h4 id="foodLocationFormTitle">Create New Food & Location</h4>
+              <input type="hidden" id="foodLocationOldWeddingType" />
+              
+              <div id="foodLocationFormAlert" class="profile-alert" hidden></div>
+              
+              <div class="form-group">
+                <label for="foodLocationWeddingType">Wedding Type <span class="required">*</span></label>
+                <select id="foodLocationWeddingType" required></select>
+              </div>
+              
+              <div class="form-group">
+                <label for="foodLocationFoodMenu">Food Menu <span class="required">*</span></label>
+                <textarea id="foodLocationFoodMenu" required rows="4"></textarea>
+              </div>
+              
+              <div class="form-group">
+                <label for="foodLocationDrinks">Drinks <span class="required">*</span></label>
+                <textarea id="foodLocationDrinks" required rows="4"></textarea>
+              </div>
+              
+              <div class="form-group">
+                <label for="foodLocationPreShootLocations">Pre-Shoot Locations <span class="required">*</span></label>
+                <textarea id="foodLocationPreShootLocations" required rows="4"></textarea>
+              </div>
+              
+              <div class="form-actions">
+                <button type="button" class="secondary-btn" id="foodLocationCancelBtn">Cancel</button>
+                <button type="submit" class="primary-btn">Save</button>
+              </div>
+            </form>
+
+            <div class="data-list-card">
+              <div class="list-header">
+                <h4>Food & Locations</h4>
+                <div class="filter-group">
+                  <select id="foodLocationFilter" class="styled-select">
+                    <option value="">All Wedding Types</option>
+                  </select>
+                  <button class="primary-btn" id="foodLocationNewBtn">+ New</button>
+                </div>
+              </div>
+              <div class="table-container">
+                <table id="foodLocationTable">
+                  <thead>
+                    <tr>
+                      <th>Wedding Type</th>
+                      <th>Food Menu</th>
+                      <th>Drinks</th>
+                      <th>Pre-Shoot Locations</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="foodLocationTableBody">
+                    <!-- Populated via JavaScript -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Restricted Colours Tab -->
+        <div class="tab-content" id="tab-restricted-colours">
+          <div class="data-management-grid">
+            <form id="restrictedColourForm" class="data-form">
+              <h4 id="restrictedColourFormTitle">Create New Restricted Colour</h4>
+              
+              <div id="restrictedColourFormAlert" class="profile-alert" hidden></div>
+              
+              <div class="form-group">
+                <label for="restrictedColourWeddingType">Wedding Type <span class="required">*</span></label>
+                <select id="restrictedColourWeddingType" required></select>
+              </div>
+              
+              <div class="form-group">
+                <label for="restrictedColourName">Restricted Colour <span class="required">*</span></label>
+                <input type="text" id="restrictedColourName" required maxlength="20" />
+              </div>
+              
+              <div class="form-actions">
+                <button type="button" class="secondary-btn" id="restrictedColourCancelBtn">Cancel</button>
+                <button type="submit" class="primary-btn">Save</button>
+              </div>
+            </form>
+
+            <div class="data-list-card">
+              <div class="list-header">
+                <h4>Restricted Colours</h4>
+                <div class="filter-group">
+                  <select id="restrictedColourFilter" class="styled-select">
+                    <option value="">All Wedding Types</option>
+                  </select>
+                  <button class="primary-btn" id="restrictedColourNewBtn">+ New</button>
+                </div>
+              </div>
+              <div class="table-container">
+                <table id="restrictedColourTable">
+                  <thead>
+                    <tr>
+                      <th>Wedding Type</th>
+                      <th>Restricted Colour</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="restrictedColourTableBody">
+                    <!-- Populated via JavaScript -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+  
+  <footer>&copy; 2025 Wedding Planning System</footer>
+  
+  <!-- Modal Background -->
+  <div class="modal-bg" id="modalBG"></div>
+  <!-- Delete Confirmation Modal -->
+  <div class="modal" id="deleteConfirmModal" style="display:none;">
+    <span class="close-x" id="closeDeleteModal">&times;</span>
+    <h3 style="margin-top:2px;">Confirm Deletion</h3>
+    <p id="deleteConfirmMessage"></p>
+    <div style="margin-top:20px;">
+      <button type="button" class="secondary-btn" id="deleteCancelBtn">Cancel</button>
+      <button type="button" class="primary-btn" id="deleteConfirmBtn" style="background:#dc3545;">Delete</button>
+    </div>
+  </div>
+  
+  <!-- Login Modal -->
+  <div class="modal" id="loginModal">
+    <span class="close-x" onclick="closeModal()">&times;</span>
+    <h3 style="margin-top:2px;">Login to your account</h3>
+    <form id="emailLoginForm">
+      <input id="loginEmail" type="email" placeholder="Email" required>
+      <input id="loginPassword" type="password" placeholder="Password" required>
+      <button type="submit" class="login-btn" style="width:100%; margin-bottom:15px;">Login</button>
+      <div id="loginMsg" style="color:red; font-size:0.98em; margin-bottom:9px;"></div>
+    </form>
+  </div>
+  
+  <!-- Load JavaScript files -->
+  <script src="assets/js/login_modal.js"></script>
+  <script src="assets/js/shared_navigation.js"></script>
+  <script src="assets/js/admin_data_management.js"></script>
+</body>
+</html>
+

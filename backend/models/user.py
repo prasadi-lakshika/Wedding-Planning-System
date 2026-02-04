@@ -16,7 +16,10 @@ class User(UserMixin, db.Model):
     """
     User model for authentication and authorization.
     
-    Supports two roles: 'admin' and 'planner' with different access levels.
+    Supports three roles: 'admin', 'planner', and 'coordinator' with different access levels.
+    - Admin: Full access to all features
+    - Planner: Can create and manage projects, assign tasks
+    - Coordinator: Can only view assigned projects and manage tasks assigned to them
     Includes secure password hashing and session management.
     """
     
@@ -36,7 +39,7 @@ class User(UserMixin, db.Model):
     phone_number = db.Column(db.String(30), nullable=True)
     address = db.Column(db.Text, nullable=True)
     
-    role = db.Column(db.Enum('admin', 'planner'), nullable=False)
+    role = db.Column(db.Enum('admin', 'planner', 'coordinator'), nullable=False)
     
     # Timestamps
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
@@ -94,6 +97,15 @@ class User(UserMixin, db.Model):
             bool: True if user is planner, False otherwise
         """
         return self.role == 'planner'
+    
+    def is_coordinator(self):
+        """
+        Check if user has coordinator role.
+        
+        Returns:
+            bool: True if user is coordinator, False otherwise
+        """
+        return self.role == 'coordinator'
     
     def to_dict(self):
         """

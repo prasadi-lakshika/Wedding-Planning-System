@@ -23,9 +23,10 @@
         <!-- Planner-only links -->
         <a href="my_account.html" class="nav-link planner-only-link active" style="display:none;">My Account</a>
         
-        <!-- Users section links -->
+        <!-- Admin-only links -->
         <a href="profile.html" class="nav-link admin-only-link" style="display:none;">Profile</a>
         <a href="admin_dashboard.html" class="nav-link admin-only-link" style="display:none;">Users</a>
+        <a href="admin_data_management.html" class="nav-link admin-only-link" style="display:none;">Data Management</a>
         
         <!-- Logout link (shown when logged in) -->
         <a href="#" id="logoutLink" class="nav-link logout-link" style="display:none;">Logout</a>
@@ -55,15 +56,6 @@
         <div id="passwordChangeMsg" style="color:red; margin-top:10px;"></div>
       </form>
     </section>
-    <section id="socialAccountsSection">
-      <h3>Social Account Linking</h3>
-      <button id="linkGoogleBtn">Link Google Account</button>
-      <button id="unlinkGoogleBtn">Unlink Google Account</button>
-      <br/><br/>
-      <button id="linkFacebookBtn">Link Facebook Account</button>
-      <button id="unlinkFacebookBtn">Unlink Facebook Account</button>
-      <div id="socialLinkMsg" style="color:red; margin-top:10px;"></div>
-    </section>
   </main>
   
   <footer>&copy; 2025 Wedding Planning System</footer>
@@ -83,19 +75,17 @@
   </div>
   
   <!-- Load JavaScript files -->
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
-  <script async defer crossorigin="anonymous" src="https://connect.facebook.net/en_US/sdk.js"></script>
   <script src="assets/js/login_modal.js"></script>
   <script src="assets/js/shared_navigation.js"></script>
   <script src="assets/js/my_account.js"></script>
   <script>
-    // Check if user is planner, if not redirect
+    // Check if user is planner or coordinator, if not redirect
     document.addEventListener('DOMContentLoaded', function() {
       const userRole = localStorage.getItem('userRole');
       const isLoggedIn = localStorage.getItem('isLoggedIn');
       
-      if (isLoggedIn !== 'true' || userRole !== 'planner') {
-        alert('Access denied. Planner privileges required.');
+      if (isLoggedIn !== 'true' || (userRole !== 'planner' && userRole !== 'coordinator')) {
+        alert('Access denied. Planner or Coordinator privileges required.');
         window.location.href = 'index.html';
         return;
       }
